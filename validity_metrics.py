@@ -22,10 +22,6 @@ data, meta = shape.getData(filename, bucketname, is_secure=is_secure)
 
 # <codecell>
 
-%whos module
-
-# <codecell>
-
 pp = pprint.PrettyPrinter(indent=4)
 pp.pprint(meta)
 
@@ -57,8 +53,8 @@ jsonSimscore = {
 #SwVersion    String    EDGE software version.
     ,'SwVersion' : meta["EdgeSoftwareVersion"]
 #RToolID    String    Right Tool ID.
-    ,'RToolID' : meta["EdgeToolIdRight"]
-    ,'LToolID' : meta["EdgeToolIdLeft"]
+    ,'RToolID' : meta["EdgeToolIdRightHex"]
+    ,'LToolID' : meta["EdgeToolIdLeftHex"]
 #TestLength    String    The length of time it took to complete the task. Ex: 02:00.0.
     ,'TestLength' : meta["TestDurationInSeconds"]
 #UploadDate    String    Upload Date
@@ -116,15 +112,15 @@ jsonSimscore.update({
     #NaN	Boolean	
     ,'NaN' : validate.findNans(data, isClipTask(filename))
 })
-
-if not jsonSimscore['MinMax'] and not jsonSimscore['Dead']:
+jsonSimscore['MinMax'] 
+'''if not jsonSimscore['MinMax'] and not jsonSimscore['Dead']:
 if not jsonSimscore['MinMax'] and not jsonSimscore['Dead']:
     status = False
 else: status =  True
-print status
+print status'''
 #Status	String
 
-#pp.pprint(jsonSimscore)
+pp.pprint(jsonSimscore)
 
 # <headingcell level=5>
 

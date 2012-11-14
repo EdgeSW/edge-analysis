@@ -13,27 +13,8 @@ conn = boto.connect_sns(
 
 # <codecell>
 
-#conn.get_topic_attributes('arn:aws:sns:us-east-1:409355352037:EdgeClientUploadCompleted')
-
-#conn.create_topic('test')
-'''{u'CreateTopicResponse': {u'CreateTopicResult': {u'TopicArn': u'arn:aws:sns:us-east-1:409355352037:test'},
-  u'ResponseMetadata': {u'RequestId': u'fc82ac83-b2ae-5883-9ff3-e59f1c5505ba'}}}'''
 topic = 'arn:aws:sns:us-east-1:409355352037:test'
-#xx = conn.subscribe('arn:aws:sns:us-east-1:409355352037:test','email','tyleha@gmail.com')
-
-# <codecell>
-
-print type(xx['SubscribeResponse']['ResponseMetadata']['RequestId'])
-print xx
-
-# <codecell>
-
-confirm = conn.confirm_subscription(topic, str(xx['SubscribeResponse']['ResponseMetadata']['RequestId']))
-print confirm
-
-# <codecell>
-
-%qtconsole
+conn.publish(topic, u'This is a cool message that you are psyched to receive', subject=u'subject line')
 
 # <codecell>
 

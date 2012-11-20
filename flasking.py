@@ -16,16 +16,17 @@ def hello_world():
     #args = flask.request.args
 
     
-    if request.method == 'POST':
-            
+    if request.method == 'POST':  
         snsmessage = json.loads(request.data)
+        if False:
         
-        subj = snsmessage["Subject"]
-        mess = snsmessage["Message"]
+            subj = snsmessage["Subject"]
+            mess = snsmessage["Message"]
         
-        print "Subject: " + subj
-        print "Message: " + mess
-        #Store these in a local log file??
+            print "Subject: " + subj #Store these in a local log file??
+            print "Message: " + mess
+        
+        print snsmessage
         return 'Hello World!\n' 
         
 

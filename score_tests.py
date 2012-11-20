@@ -8,8 +8,9 @@
 from datetime import datetime
 from scoring import *
 import scipy.cluster.vq as vq
-import nltk, pdb, ipdb
-import pickle, cStringIO, ast, json
+import nltk, pdb
+import pickle, cStringIO, ast, json, os
+import scoring as scoring
 import fetch.shapeS3 as shape
 import fetch.fetchS3 as fetchS3
 import pickle
@@ -20,28 +21,30 @@ import pickle
 
 # <codecell>
 
-### Get Codebook if Needed
-#sut_cdbkL, sut_cdbkR, a, b = vqr.download_codebook('10-OCT-2012 1:33')
-f = open(r'C:\Users\Tyler\.ipython\Simscore-Computing\sut_cdbkL', 'r')
-sut_cdbkL = pickle.load(f)
-f.close()
-f = open(r'C:\Users\Tyler\.ipython\Simscore-Computing\sut_cdbkR', 'r')
-sut_cdbkR = pickle.load(f)
-f.close
+def load_pickle(filepath):
+    '''opens and closes pickled file and returns contained pickleobj'''
+    #try:
+    f = open(filepath, 'r')
+    var = pickle.load(f)
+    f.close()
+    return var    
 
-# replace filename with the file you want to create
-#file = open('humblewriter', 'w')
-#pickle.dump(m,file)
-#file.close()
+# <codecell>
+
+### Get Codebook if Needed
+if 'C:\\' in os.getcwd(): prefix = 'C:\\Users\\Tyler\\.ipython\\Simscore-Computing\\'
+else: prefix = ''
+l = 'sut_cdbkL'
+r = 'sut_cdbkR'
+
+sut_cdbkL = load_pickle(prefix+l)
+sut_cdbkR = load_pickle(prefix+r)
+
 
 ###Open Saved HMM 
-#unpicklefile = open('trainedNovL', 'r') #in Ubuntu
-f = open(r'C:\Users\Tyler\.ipython\HMM-Train\suturingNovL', 'r')
-suturingNovL = pickle.load(f)
-f.close()
-f = open(r'C:\Users\Tyler\.ipython\HMM-Train\suturingExpL', 'r')
-suturingExpL = pickle.load(f)
-f.close()
+suturingNovL = load_pickle(prefix+'suturingNovL')
+suturingExpL = load_pickle(prefix+'suturingExpL')
+
 print suturingExpL
 
 # <codecell>
@@ -93,7 +96,7 @@ graspsegsLR = getGrasps(seg_idxs, exam_rawdata)
 '''Compute log probability of each grasp segment for each hand'''
 #For each segment in the Left Hand
 logprobNovL = 0; logprobExpL = 0; i=0
-#start = datetime.now()
+start = datetime.now()
 
 def score_log_prob(cdbk, seg_encod):
     lp = cdbk.log_probability( [(t,None) for t in seg_encod]) / len(seg_encod)
@@ -114,7 +117,7 @@ for seg in graspsegsLR['left']:
     i += 1
 print logprobNovL, logprobExpL
 
-#print datetime.now() - start
+print datetime.now() - start
 
 # <codecell>
 

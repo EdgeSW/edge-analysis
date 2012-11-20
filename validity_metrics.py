@@ -3,19 +3,18 @@
 
 # <codecell>
 
+from computing_imports import *
+
 %load_ext autoreload
-%autoreload 2
+%autoreload
 import fetch.shapeS3 as shape
 import fetch.fetchS3 as fetchS3
 import report.tools.validate as validate
-import numpy as np
-import time
-import json, sys, getopt, string, os, datetime, pprint
-import StringIO, base64
+import pprint
 
 # <codecell>
 
-filename = 'edge6/2012/10/24.21.59.05.325.0.txt'
+filename = 'edge6/2012/11/13.21.07.03.288.0.txt'#'edge6/2012/10/24.21.59.05.325.0.txt'
 bucketname = 'incoming-simscore-org'
 is_secure = False if '.' in bucketname else True
 data, meta = shape.getData(filename, bucketname, is_secure=is_secure)
@@ -23,7 +22,8 @@ data, meta = shape.getData(filename, bucketname, is_secure=is_secure)
 # <codecell>
 
 pp = pprint.PrettyPrinter(indent=4)
-pp.pprint(meta)
+#pp.pprint(meta)
+#print data.dtype.names
 
 # <headingcell level=5>
 
@@ -31,66 +31,78 @@ pp.pprint(meta)
 
 # <codecell>
 
-jsonSimscore = {
-                
-                
-#TestID    Int    The uniquely generated ID for this test score to associate all other data with.
-    'TestID' : meta['DataFileNameOnS3'][:-4] 
-#IsPractice    Boolean    Is this a scored test?
-    , 'IsPractice' : meta["IsPracticeTest"]
-#MetadataFilename    String    Metadata Filename and location in S3.
-    ,'MetadataFilename' : meta["MetaDataFileNameOnS3"]    
-#TestDataFilename    String    Test Data Filename and location in S3.
-    ,'TestDataFilename' : meta['DataFileNameOnS3']    
-#VideoDataFilename    String    Video Data Filename and location in S3.
- ,'VideoDataFilename' : meta["VideoFileNameOnS3"]
-#UserID    String    User ID.
-    ,'UserID' : str(meta['UserId'])
-#ProctorID    String    Proctor ID.
-    ,'ProctorID' : str(meta["ProctorId"])
-#EdgeID    String    EDGE ID.
-    ,'EdgeID' : str(meta["EdgeUnitId"])
-#SwVersion    String    EDGE software version.
-    ,'SwVersion' : meta["EdgeSoftwareVersion"]
-#RToolID    String    Right Tool ID.
-    ,'RToolID' : meta["EdgeToolIdRightHex"]
-    ,'LToolID' : meta["EdgeToolIdLeftHex"]
-#TestLength    String    The length of time it took to complete the task. Ex: 02:00.0.
-    ,'TestLength' : meta["TestDurationInSeconds"]
-#UploadDate    String    Upload Date
-    ,'UploadDate' : '.'.join(str(meta['DataFileNameOnEdge']).split('\\')[3].split('.')[:6])
-
+def summary_metrics(meta,data):
+    jsonSimscore = {
+                    
+    #TestID    Int    The uniquely generated ID for this test score to associate all other data with.
+        'TestID' : meta['DataFileNameOnS3'][:-4] 
+    #IsPractice    Boolean    Is this a scored test?
+        , 'IsPractice' : meta["IsPracticeTest"]
+    #MetadataFilename    String    Metadata Filename and location in S3.
+        ,'MetadataFilename' : meta["MetaDataFileNameOnS3"]    
+    #TestDataFilename    String    Test Data Filename and location in S3.
+        ,'TestDataFilename' : meta['DataFileNameOnS3']    
+    #VideoDataFilename    String    Video Data Filename and location in S3.
+        ,'VideoDataFilename' : meta["VideoFileNameOnS3"]
+    #UserID    String    User ID.
+        ,'UserID' : str(meta['UserId'])
+    #ProctorID    String    Proctor ID.
+        ,'ProctorID' : str(meta["ProctorId"])
+    #EdgeID    String    EDGE ID.
+        ,'EdgeID' : str(meta["EdgeUnitId"])
+    #SwVersion    String    EDGE software version.
+        ,'SwVersion' : meta["EdgeSoftwareVersion"]
+    #RToolID    String    Right Tool ID.
+        ,'LToolID' : meta.get('EdgeToolIdLeftHex',meta['EdgeToolIdLeft']) #return hex ID if available (old tests do not report hex)
+        ,'RToolID' : meta.get('EdgeToolIdRightHex',meta['EdgeToolIdRight'])
+    #TestLength    String    The length of time it took to complete the task. Ex: 02:00.0.
+        ,'TestLength' : meta["TestDurationInSeconds"]
+    #testlengthpass	Boolean	Length of test is within acceptable bounds
+        ,'TestLengthPass': 1 if float(meta["TestDurationInSeconds"])>5 else 0
+    #UploadDate    String    Upload Date
+        ,'UploadDate' : '.'.join(str(meta['DataFileNameOnEdge']).split('\\')[3].split('.')[:6])
+    #Badframe	Int	Video dropped frame count.
+        ,'BadFrames': meta['VideoDroppedFrameCount']
+        
+                    }
     
-                }
+    #InstitutionID    String    EDGE Institution ID.
+    inst = ['Engineering','Tulane','SIU','UPMC','Madigan','Duke','UC Irvine','UNM','Cleveland Clinic','UW','OSU','NA','NA']
+    try: InstitutionID = inst[meta['EdgeUnitId']]
+    except: InstitutionID = 'Unknown'
+    jsonSimscore['InstitutionID'] = InstitutionID   
+    
+    #TaskType    String    Task Type.
+    tasks = ['PegTransfer','Cutting','Suture','ClipApply']
+    try: TaskType = tasks[meta["TaskId"]]
+    except: TaskType = 'Unknown'
+    jsonSimscore['TaskType'] = TaskType 
+    
+    #ProctorValues
+    jsonSimscore['ProctorValues'] = meta.get('Proctor'+TaskType,'Unknown')
+    
+    #UploadDateUnix    Time    Date converted into Unix Epoch C Time for fast sorting.
+    filename = str(meta['DataFileNameOnEdge']).split('\\')[3].split('.')
+    edgetime = '.'.join(filename[:6])
+    jsonSimscore['UploadDateUnix'] = int(time.mktime(time.strptime(edgetime, '%Y.%m.%d.%H.%M.%S'))) 
+    
+    
+    #pathlength	Boolean	Total tool path length is above an accepted minimum
+    
+    #pathlenthvalue	String	
+    
+    #proctor	Boolean	Sanity check on proctor field values
+    
+    #continuous	Boolean	Check for any temporal discontinuities 
+    check = 1
+    for x in diff(diff(data['%Time_V1']) ):
+        if x > 0.005 or x < -.005: check = 0
+    jsonSimscore['Continuous'] = check
+    
+    return jsonSimscore
 
-#InstitutionID    String    EDGE Institution ID.
-inst = ['Engineering','Tulane','SIU','UPMC','Madigan','Duke','UC Irvine','UNM','Cleveland Clinic','UW','OSU','NA','NA']
-try: InstitutionID = inst[meta['EdgeUnitId']]
-except: InstitutionID = 'Unknown'
-jsonSimscore['InstitutionID'] = InstitutionID   
-
-#TaskType    String    Task Type.
-tasks = ['PegTransfer','Cutting','Suture','ClipApply']
-try: TaskType = tasks[meta["TaskId"]]
-except: TaskType = 'Unknown'
-jsonSimscore['TaskType'] = TaskType 
-
-#UploadDateUnix    Time    Date converted into Unix Epoch C Time for fast sorting.
-filename = str(meta['DataFileNameOnEdge']).split('\\')[3].split('.')
-edgetime = '.'.join(filename[:6])
-jsonSimscore['UploadDateUnix'] = int(time.mktime(time.strptime(edgetime, '%Y.%m.%d.%H.%M.%S'))) 
-
-#testlength	Boolean	Length of test is within acceptable bounds
-
-#pathlength	Boolean	Total tool path length is above an accepted minimum
-
-#pathlenthvalue	String	
-
-#proctor	Boolean	Sanity check on proctor field values
-
-#continuous	Boolean	Check for any temporal discontinuities 
-
-print json.dumps(jsonSimscore)
+jsonSimscore = summary_metrics(meta,data)
+pp.pprint(jsonSimscore)
 
 # <headingcell level=5>
 
@@ -101,25 +113,20 @@ print json.dumps(jsonSimscore)
 from fetch.configuration import isClipTask
 #testID	Int	The test ID this record is associated with. See Test Summary.
 #Metric	String	
+def data_metrics_append(jsonSimscore, data, filename):
+    jsonSimscore.update({
+        #Max	Float	Min	Float                 
+         'MinMax' : validate.findMinMax(data)
+        #Dead	Boolean	
+        ,'DeadSensors' : validate.findDeadSensor(validate.findMinMax(data))
+        #Out of Range	Boolean
+        ,'OutOfRange' : validate.findOutOfRange(validate.findMinMax(data))
+        #NaN	Boolean	
+        ,'NaNSensors' : validate.findNans(data, isClipTask(filename))
+    })
+    return jsonSimscore
 
-jsonSimscore.update({
-    #Max	Float	Min	Float                 
-     'MinMax' : validate.findMinMax(data)
-    #Dead	Boolean	
-    ,'Dead' : validate.findDeadSensor(validate.findMinMax(data))
-    #Out of Range	Boolean
-    ,'OutOfRange' : validate.findOutOfRange(validate.findMinMax(data))
-    #NaN	Boolean	
-    ,'NaN' : validate.findNans(data, isClipTask(filename))
-})
-jsonSimscore['MinMax'] 
-'''if not jsonSimscore['MinMax'] and not jsonSimscore['Dead']:
-if not jsonSimscore['MinMax'] and not jsonSimscore['Dead']:
-    status = False
-else: status =  True
-print status'''
-#Status	String
-
+jsonSimscore = data_metrics_append(jsonSimscore, data, filename)
 pp.pprint(jsonSimscore)
 
 # <headingcell level=5>
@@ -128,22 +135,54 @@ pp.pprint(jsonSimscore)
 
 # <codecell>
 
-#MachineHealthReportID	Int	
-#TestID	Int	
-#ActiveRecord	Boolean	Used to keep track of what machine health record is shown in the dashboard.
-#kinematics	Boolean	Kinematics set to default values
-#md5hash	Boolean	MD5 hash is intact
-#tooltippos	Boolean	Tool tip position same at beginning and end of test (tooltip drift)
-#tooltipposvalue	Float	
-#ToolID	Boolean	Check that tool IDs exist in database
-#nulldata	Boolean	Sensor data does not contain NaNs, null data
+def start_v_end(*args):
+    
+    return tuple( e[-1]-e[0] for e in args)
 
-#lastCalibration	String	Date of last machine calibration.
-#lastUpload	String	Date of last uploaded test to machine.
-#pendingUploads	String	Number of pending uploads.
-#fail_type	String	Concatenated string of items that failed. Ex: OB Data, Video Corruption
-#bad_sensors	String	Concatenated string of sensors that are bad. Ex: J1_R, Fg_L.
-#sw_ver	String	EDGE software version
+a, b = start_v_end(data['%Time_V1'],data['Fg_R'])
+print a, b
+print data.dtype.names
+
+# <codecell>
+
+#	MachineHealthReportID	Int	
+#	ActiveRecord	Boolean	Used to keep track of what machine health record is shown in the dashboard.
+#	kinematics	Boolean	Kinematics set to default values
+#	md5hash	Boolean	MD5 hash is intact
+
+#	tooltipposvalue	Float	
+{'left':list(start_v_end(data['X_L'],data['Y_L'],data['Z_L'])), 'right':list(start_v_end(data['X_R'],data['Y_R'],data['Z_R']))}
+
+#	tooltippos	Boolean	Tool tip position same at beginning and end of test (tooltip drift)
+
+
+#	LinEncDrift	Boolean	Is there linear encoder drift?
+#	LinEncDriftValue	Float	Offset from start and finish linear encoder point
+#	ToolID	Boolean	Check that tool IDs exist in database
+
+#	lastCalibration	String	Date of last machine calibration.
+#	lastUpload	String	Date of last uploaded test to machine.
+#	FailType	String	Concatenated string of items that failed. Ex: OB Data, Video Corruption
+
+# <codecell>
+
+#FailType	List of String	List of Failure Types for whole test: OB Data, Video Corruption
+#List of errors to report (previously computed)
+errors = ['NaNSensors','DeadSensors','OutOfRange']#DroppedFrames, InvalidToolID, LinEncDrift
+#jsonSimscore['FailTypes'] = [error for error in errors if jsonSimscore[error] != [] ]
+
+#OutOfRange
+#NaN
+#DeadSensor
+#DroppedFrames
+#BadToolID
+#LinEncDrift
+#InvalidToolID
+
+# <codecell>
+
+#from fetch.configuration import kinematics
+#fetch.configuration.__file__
 
 # <headingcell level=1>
 

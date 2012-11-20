@@ -25,7 +25,8 @@ def findDeadSensor(minmax):
         if  (abs(v['max'] - v['min']) < 0.0001):
             results.append(k)
     return results
-    
+
+#TODO: change minmax range to handle different test types (needledrivers have different ThG)
 def findOutOfRange(minmax):
     results = []
     for k, v in minmax.iteritems():

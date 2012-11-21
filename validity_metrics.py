@@ -3,27 +3,13 @@
 
 # <codecell>
 
-from computing_imports import *
-
-%load_ext autoreload
-%autoreload
+import numpy as np
+import json, string
+import time, datetime
 import fetch.shapeS3 as shape
 import fetch.fetchS3 as fetchS3
 import report.tools.validate as validate
 import pprint
-
-# <codecell>
-
-filename = 'edge6/2012/11/13.21.07.03.288.0.txt'#'edge6/2012/10/24.21.59.05.325.0.txt'
-bucketname = 'incoming-simscore-org'
-is_secure = False if '.' in bucketname else True
-data, meta = shape.getData(filename, bucketname, is_secure=is_secure)
-
-# <codecell>
-
-pp = pprint.PrettyPrinter(indent=4)
-#pp.pprint(meta)
-#print data.dtype.names
 
 # <headingcell level=5>
 
@@ -59,8 +45,6 @@ def summary_metrics(meta,data):
         ,'TestLength' : meta["TestDurationInSeconds"]
     #testlengthpass	Boolean	Length of test is within acceptable bounds
         ,'TestLengthPass': 1 if float(meta["TestDurationInSeconds"])>5 else 0
-    #UploadDate    String    Upload Date
-        ,'UploadDate' : '.'.join(str(meta['DataFileNameOnEdge']).split('\\')[3].split('.')[:6])
     #Badframe	Int	Video dropped frame count.
         ,'BadFrames': meta['VideoDroppedFrameCount']
         
@@ -81,6 +65,10 @@ def summary_metrics(meta,data):
     #ProctorValues
     jsonSimscore['ProctorValues'] = meta.get('Proctor'+TaskType,'Unknown')
     
+    #UploadDate    String    Upload Date
+    xx = str(meta['DataFileNameOnEdge']).split('\\')[3].split('.')[:6]
+    jsonSimscore['UploadDate'] = '-'.join(xx[:3])+' '+':'.join(xx[3:])
+    
     #UploadDateUnix    Time    Date converted into Unix Epoch C Time for fast sorting.
     filename = str(meta['DataFileNameOnEdge']).split('\\')[3].split('.')
     edgetime = '.'.join(filename[:6])
@@ -95,14 +83,14 @@ def summary_metrics(meta,data):
     
     #continuous	Boolean	Check for any temporal discontinuities 
     check = 1
-    for x in diff(diff(data['%Time_V1']) ):
+    for x in np.diff(np.diff(data['%Time_V1']) ):
         if x > 0.005 or x < -.005: check = 0
     jsonSimscore['Continuous'] = check
     
     return jsonSimscore
 
-jsonSimscore = summary_metrics(meta,data)
-pp.pprint(jsonSimscore)
+#jsonSimscore = summary_metrics(meta,data,diff)
+#pp.pprint(jsonSimscore)
 
 # <headingcell level=5>
 
@@ -111,14 +99,13 @@ pp.pprint(jsonSimscore)
 # <codecell>
 
 from fetch.configuration import isClipTask
-#testID	Int	The test ID this record is associated with. See Test Summary.
-#Metric	String	
+
 def data_metrics_append(jsonSimscore, data, filename):
     jsonSimscore.update({
         #Max	Float	Min	Float                 
          'MinMax' : validate.findMinMax(data)
         #Dead	Boolean	
-        ,'DeadSensors' : validate.findDeadSensor(validate.findMinMax(data))
+        ,'DeadSensors' : validate.findDeadSensor(validate.findMinMax(data), isClipTask(filename))
         #Out of Range	Boolean
         ,'OutOfRange' : validate.findOutOfRange(validate.findMinMax(data))
         #NaN	Boolean	
@@ -126,8 +113,8 @@ def data_metrics_append(jsonSimscore, data, filename):
     })
     return jsonSimscore
 
-jsonSimscore = data_metrics_append(jsonSimscore, data, filename)
-pp.pprint(jsonSimscore)
+#jsonSimscore = data_metrics_append(jsonSimscore, data, filename)
+#pp.pprint(jsonSimscore)
 
 # <headingcell level=5>
 
@@ -136,46 +123,56 @@ pp.pprint(jsonSimscore)
 # <codecell>
 
 def start_v_end(*args):
-    
-    return tuple( e[-1]-e[0] for e in args)
-
-a, b = start_v_end(data['%Time_V1'],data['Fg_R'])
-print a, b
-print data.dtype.names
+    if len(args)>1:
+        return tuple( e[-1]-e[0] for e in args)
+    else: return args[0][-1]-args[0][0]
 
 # <codecell>
 
-#	MachineHealthReportID	Int	
-#	ActiveRecord	Boolean	Used to keep track of what machine health record is shown in the dashboard.
-#	kinematics	Boolean	Kinematics set to default values
-#	md5hash	Boolean	MD5 hash is intact
+def machine_health_append(jsonSimscore, meta, data):    
+    #	MachineHealthReportID	Int	
+    #	ActiveRecord	Boolean	Used to keep track of what machine health record is shown in the dashboard.
+    #	kinematics	Boolean	Kinematics set to default values
+    #	md5hash	Boolean	MD5 hash is intact
+    
+    #	ToolTipDriftValue	Float	
+    jsonSimscore['ToolTipDriftValue'] = {'left':list(start_v_end(data['X_L'],data['Y_L'],data['Z_L'])), 'right':list(start_v_end(data['X_R'],data['Y_R'],data['Z_R']))}
+    
+    #	ToolTipDrift	Boolean	Tool tip position same at beginning and end of test (tooltip drift)
+    vall = 0; valr = 0
+    for v in list(start_v_end(data['X_L'],data['Y_L'],data['Z_L'])):
+        if v > 3: vall = 1
+    for v in list(start_v_end(data['X_R'],data['Y_R'],data['Z_R'])):        
+        if v > 3: valr = 1    
+    jsonSimscore['ToolTipDrift'] = {'left':vall, 'right':valr}
+    
+    #	LinEncDrift	Boolean	Is there linear encoder drift?
+    jsonSimscore['LinEncDrift'] = {'left': 1 if abs(start_v_end(data['Lin_L'])) > 1 else 0, 'right': 1 if abs(start_v_end(data['Lin_R'])) > 1 else 0}
+    #	LinEncDriftValue	Float	Offset from start and finish linear encoder point
+    jsonSimscore['LinEncDriftValue'] = {'left': start_v_end(data['Lin_L']), 'right': start_v_end(data['Lin_R'])}
+    #	InvalidToolID	Boolean	Check that tool IDs exist in database
+    
+    #	lastCalibration	String	Date of last machine calibration.
+    temp = meta['CalibrationData']['CalibrationSavedDate'].split('T')
+    jsonSimscore['LastCalibration'] = str(temp[0]+' '+temp[1])
+    #	lastUpload	String	Date of last uploaded test to machine.
+    #	FailType	String	Concatenated string of items that failed. Ex: OB Data, Video Corruption
+    
+    return jsonSimscore
 
-#	tooltipposvalue	Float	
-{'left':list(start_v_end(data['X_L'],data['Y_L'],data['Z_L'])), 'right':list(start_v_end(data['X_R'],data['Y_R'],data['Z_R']))}
-
-#	tooltippos	Boolean	Tool tip position same at beginning and end of test (tooltip drift)
-
-
-#	LinEncDrift	Boolean	Is there linear encoder drift?
-#	LinEncDriftValue	Float	Offset from start and finish linear encoder point
-#	ToolID	Boolean	Check that tool IDs exist in database
-
-#	lastCalibration	String	Date of last machine calibration.
-#	lastUpload	String	Date of last uploaded test to machine.
-#	FailType	String	Concatenated string of items that failed. Ex: OB Data, Video Corruption
+#jsonSimscore = machine_health_append(jsonSimscore, data)
 
 # <codecell>
 
 #FailType	List of String	List of Failure Types for whole test: OB Data, Video Corruption
 #List of errors to report (previously computed)
-errors = ['NaNSensors','DeadSensors','OutOfRange']#DroppedFrames, InvalidToolID, LinEncDrift
+#errors = ['NaNSensors','DeadSensors','OutOfRange']#DroppedFrames, InvalidToolID, LinEncDrift
 #jsonSimscore['FailTypes'] = [error for error in errors if jsonSimscore[error] != [] ]
 
 #OutOfRange
 #NaN
 #DeadSensor
 #DroppedFrames
-#BadToolID
 #LinEncDrift
 #InvalidToolID
 
@@ -250,4 +247,7 @@ def logoutSimscore(c):
     return c
 
 #c = logoutSimscore(c)
+
+# <codecell>
+
 

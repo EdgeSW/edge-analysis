@@ -19,11 +19,16 @@ def findNans(data, isClipTask):
             results.append(n)
     return results
         
-def findDeadSensor(minmax):
+def findDeadSensor(minmax, isClipTask):
     results = []
+    
     for k, v in minmax.iteritems():
-        if  (abs(v['max'] - v['min']) < 0.0001):
-            results.append(k)
+        if not isClipTask:
+            if  (abs(v['max'] - v['min']) < 0.0001):
+                results.append(k)
+        else:
+            if  (abs(v['max'] - v['min']) < 0.0001) and k != 'Rot_R' and k != 'ThG_R':
+                results.append(k)
     return results
 
 #TODO: change minmax range to handle different test types (needledrivers have different ThG)

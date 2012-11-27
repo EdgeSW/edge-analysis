@@ -95,6 +95,16 @@ file.close()
 
 # <codecell>
 
+file = open('2012.7.13_data_onwards.txt', 'rb')
+data = pickle.load(file)
+file.close()
+
+# <codecell>
+
+print len(data)
+
+# <codecell>
+
 diff_x_all = []
 diff_y_all  = []
 diff_z_all  = []
@@ -103,8 +113,8 @@ for k, v in data.iteritems():
     if len(v) > 1:
         try:
             xx = np.array(ast.literal_eval(v[1]))
-            x = xx[:,13]
-            y = xx[:,14]
+            x = xx[:,3]
+            y = xx[:,6]
             z = xx[:,15]
             
             diff_x = (x[0]-x[-1])
@@ -125,7 +135,9 @@ for k, v in data.iteritems():
 
 import matplotlib
 fig = plt.figure()
-n, bins, patches = hist(diff_y_all,50)
+n, bins, patches = hist(diff_x_all,50)
+
+#TODO: check for linencdrift by ToolID
 
 # <codecell>
 

@@ -3,11 +3,10 @@
 
 # <codecell>
 
+from computing_imports import *
 import numpy as np
 import json, string
 import time, datetime
-import fetch.shapeS3 as shape
-import fetch.fetchS3 as fetchS3
 import report.tools.validate as validate
 import pprint
 
@@ -17,11 +16,47 @@ import pprint
 
 # <codecell>
 
+ok = 'clear'
+bad = 'error'
+
+def round_float(f,decimals):
+    if isinstance(f, float):
+        return round(f,decimals)
+    else: return f
+    
+def round_dict(d,decimal):
+    '''round any float values in a dictionary to # decimal places.
+Will only round floats that are values of keys, not contained in lists/tuples.'''
+    
+    for key, v in d.iteritems():
+        if isinstance(v, float):
+            d[key] = round(v,decimal)
+            
+        elif isinstance(v, dict):
+            d[key] = round_dict(v, decimal)
+         
+        
+    return d  
+    
+
+# <codecell>
+
+def start_v_end(*args):
+    if len(args)>1:
+        return tuple( e[-1]-e[0] for e in args)
+    else: return args[0][-1]-args[0][0]
+
+# <codecell>
+
 def summary_metrics(meta,data):
     jsonSimscore = {
                     
     #TestID    Int    The uniquely generated ID for this test score to associate all other data with.
         'TestID' : meta['DataFileNameOnS3'][:-4] 
+    #InstitutionID    Int    EDGE Institution ID.
+        ,'InstitutionID' : meta['EdgeUnitId']
+    #TaskType    String    Task Type.
+        ,'TaskType' : meta['TaskId']
     #IsPractice    Boolean    Is this a scored test?
         , 'IsPractice' : meta["IsPracticeTest"]
     #MetadataFilename    String    Metadata Filename and location in S3.
@@ -44,25 +79,16 @@ def summary_metrics(meta,data):
     #TestLength    String    The length of time it took to complete the task. Ex: 02:00.0.
         ,'TestLength' : meta["TestDurationInSeconds"]
     #testlengthpass	Boolean	Length of test is within acceptable bounds
-        ,'TestLengthPass': 1 if float(meta["TestDurationInSeconds"])>5 else 0
+        ,'TestLengthPass': ok if float(meta["TestDurationInSeconds"])>5 else bad
     #Badframe	Int	Video dropped frame count.
         ,'BadFrames': meta['VideoDroppedFrameCount']
         
                     }
-    
-    #InstitutionID    String    EDGE Institution ID.
-    inst = ['Engineering','Tulane','SIU','UPMC','Madigan','Duke','UC Irvine','UNM','Cleveland Clinic','UW','OSU','NA','NA']
-    try: InstitutionID = inst[meta['EdgeUnitId']]
-    except: InstitutionID = 'Unknown'
-    jsonSimscore['InstitutionID'] = InstitutionID   
-    
-    #TaskType    String    Task Type.
+
+    #ProctorValues
     tasks = ['PegTransfer','Cutting','Suture','ClipApply']
     try: TaskType = tasks[meta["TaskId"]]
     except: TaskType = 'Unknown'
-    jsonSimscore['TaskType'] = TaskType 
-    
-    #ProctorValues
     jsonSimscore['ProctorValues'] = meta.get('Proctor'+TaskType,'Unknown')
     
     #UploadDate    String    Upload Date
@@ -73,8 +99,7 @@ def summary_metrics(meta,data):
     filename = str(meta['DataFileNameOnEdge']).split('\\')[3].split('.')
     edgetime = '.'.join(filename[:6])
     jsonSimscore['UploadDateUnix'] = int(time.mktime(time.strptime(edgetime, '%Y.%m.%d.%H.%M.%S'))) 
-    
-    
+
     #pathlength	Boolean	Total tool path length is above an accepted minimum
     
     #pathlenthvalue	String	
@@ -82,9 +107,9 @@ def summary_metrics(meta,data):
     #proctor	Boolean	Sanity check on proctor field values
     
     #continuous	Boolean	Check for any temporal discontinuities 
-    check = 1
+    check = ok
     for x in np.diff(np.diff(data['%Time_V1']) ):
-        if x > 0.005 or x < -.005: check = 0
+        if abs(x) > 0.005: check = bad
     jsonSimscore['Continuous'] = check
     
     return jsonSimscore
@@ -122,13 +147,6 @@ def data_metrics_append(jsonSimscore, data, filename):
 
 # <codecell>
 
-def start_v_end(*args):
-    if len(args)>1:
-        return tuple( e[-1]-e[0] for e in args)
-    else: return args[0][-1]-args[0][0]
-
-# <codecell>
-
 def machine_health_append(jsonSimscore, meta, data):    
     #	MachineHealthReportID	Int	
     #	ActiveRecord	Boolean	Used to keep track of what machine health record is shown in the dashboard.
@@ -136,18 +154,19 @@ def machine_health_append(jsonSimscore, meta, data):
     #	md5hash	Boolean	MD5 hash is intact
     
     #	ToolTipDriftValue	Float	
-    jsonSimscore['ToolTipDriftValue'] = {'left':list(start_v_end(data['X_L'],data['Y_L'],data['Z_L'])), 'right':list(start_v_end(data['X_R'],data['Y_R'],data['Z_R']))}
+    jsonSimscore['ToolTipDriftValue'] = {'left':{'x': start_v_end(data['X_L']), 'y':start_v_end(data['Y_L']), 'z':start_v_end(data['Z_L'])}
+                                        ,'right': {'x':start_v_end(data['X_R']), 'y':start_v_end(data['Y_R']), 'z':start_v_end(data['Z_R'])} } 
     
     #	ToolTipDrift	Boolean	Tool tip position same at beginning and end of test (tooltip drift)
-    vall = 0; valr = 0
+    vall = ok; valr = ok
     for v in list(start_v_end(data['X_L'],data['Y_L'],data['Z_L'])):
-        if v > 3: vall = 1
+        if v > 3: vall = bad
     for v in list(start_v_end(data['X_R'],data['Y_R'],data['Z_R'])):        
-        if v > 3: valr = 1    
+        if v > 3: valr = bad
     jsonSimscore['ToolTipDrift'] = {'left':vall, 'right':valr}
     
     #	LinEncDrift	Boolean	Is there linear encoder drift?
-    jsonSimscore['LinEncDrift'] = {'left': 1 if abs(start_v_end(data['Lin_L'])) > 1 else 0, 'right': 1 if abs(start_v_end(data['Lin_R'])) > 1 else 0}
+    jsonSimscore['LinEncDrift'] = {'left': bad if abs(start_v_end(data['Lin_L'])) > 1 else ok, 'right': bad if abs(start_v_end(data['Lin_R'])) > 1 else ok}
     #	LinEncDriftValue	Float	Offset from start and finish linear encoder point
     jsonSimscore['LinEncDriftValue'] = {'left': start_v_end(data['Lin_L']), 'right': start_v_end(data['Lin_R'])}
     #	InvalidToolID	Boolean	Check that tool IDs exist in database

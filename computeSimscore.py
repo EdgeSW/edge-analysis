@@ -10,30 +10,21 @@
 from computing_imports import *
 import fetch.shapeS3 as shape
 import fetch.fetchS3 as fetchS3
+import fetch.mySQS as mySQS
+
 import report.tools.validate as validate
 import validity_metrics as vm
-%load_ext autoreload
-%autoreload
+from fetch.mySQS import sqs_connection as conn
+
 from boto.sqs.message import Message
-conn = boto.connect_sqs(
-        aws_access_key_id='AKIAJFD5VPO6RFKGTWIA',
-        aws_secret_access_key='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')
+
 import pprint
 pp = pprint.PrettyPrinter(indent=4)
 
 # <codecell>
 
-get_sqs_filename(message)
-
-# <codecell>
-
-def get_sqs_filename(message):
-    '''given a decoded sqs message from SNS, return the Edge filename'''
-    
-    sqsmessage = json.loads(rs.get_body())["Message"]
-    temp = sqsmessage.split('.')
-    temp[-1] = 'txt'
-    return str('.'.join(temp))
+%load_ext autoreload
+%autoreload
 
 # <codecell>
 
@@ -56,7 +47,7 @@ if rs:
     try:
         #Pull filename from S3
         bucketname = 'incoming-simscore-org'
-        filename = get_sqs_filename(rs)#'edge6/2012/11/05.18.46.23.340.0.txt'
+        filename = mySQS.get_sqs_filename(rs) #'edge6/2012/11/05.18.46.23.340.0.txt'
         data, meta = shape.getData(filename, bucketname, is_secure=True)
         #print meta
         
@@ -74,6 +65,7 @@ if rs:
             #Append score to jsonSimscore
         
         #Processing is completed --Add this jsonSimscore to new SQS stack for POST
+        jsonSimscore = vm.round_dict(jsonSimscore,3)
         m = Message()
         m.set_body(json.dumps(jsonSimscore))
         receipt = endq.write(m)
@@ -105,7 +97,6 @@ print 'done'
 
 # <codecell>
 
-
 bucketname = 'incoming-simscore-org'
 filename = 'edge6/2012/11/05.19.16.31.340.3.txt'
 data, meta = shape.getData(filename, bucketname, is_secure=True)
@@ -117,10 +108,6 @@ jsonSimscore = vm.data_metrics_append(jsonSimscore, data, filename)
 jsonSimscore = vm.machine_health_append(jsonSimscore, meta, data)
 
 #print pp.pprint(jsonSimscore)
-
-# <codecell>
-
-json.dumps(jsonSimscore)
 
 # <codecell>
 

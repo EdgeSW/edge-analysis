@@ -3,8 +3,8 @@
 
 # <codecell>
 
-%load_ext autoreload
-%autoreload 2
+import sys
+sys.path.append('C:\\Users\\Tyler\\.ipython\\Simscore-Computing')
 from datetime import datetime
 from scoring import *
 import scipy.cluster.vq as vq
@@ -18,6 +18,10 @@ import pickle
 # <headingcell level=4>
 
 # Load the Data
+
+# <codecell>
+
+class 
 
 # <codecell>
 

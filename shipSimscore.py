@@ -7,13 +7,27 @@
 
 # <codecell>
 
-from computing_imports import *
+import sys, os
+sys.path.append('C:\\Users\\Tyler\\.ipython\\Simscore-Computing')
+
+import boto
+import json
 import pycurl
-from boto.sqs.message import Message
 import validity_metrics as vm
-conn = boto.connect_sqs(
-        aws_access_key_id='AKIAJFD5VPO6RFKGTWIA',
-        aws_secret_access_key='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')
+import report.simscore as sim
+from fetch.mySQS import sqs_connection as conn
+
+from boto.sqs.message import Message
+
+# <codecell>
+
+%load_ext autoreload
+%autoreload
+
+add = 'http://dev.simscore.md3productions.com/simscores-v1/machinereport'
+
+p = sim.Postfields(user = 'grading', pw='r*tFQqmb')
+p.print_post()
 
 # <codecell>
 
@@ -45,7 +59,7 @@ if rs:
             
         #POST to simscore
         c = pycurl.Curl()  
-        vm.postSimscore(c, json.dumps(jsonSimscore))
+        sim.postSimscore(c, json.dumps(jsonSimscore))
         
         #if simscore DEFINITELY recieves POST, returns 200, etc:
             #delete message from queue.

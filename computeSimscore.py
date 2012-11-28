@@ -12,7 +12,7 @@ import fetch.shapeS3 as shape
 import fetch.fetchS3 as fetchS3
 import fetch.mySQS as mySQS
 
-import report.tools.validate as validate
+import report.validate as validate
 import validity_metrics as vm
 from fetch.mySQS import sqs_connection as conn
 
@@ -23,14 +23,14 @@ pp = pprint.PrettyPrinter(indent=4)
 
 # <codecell>
 
-%load_ext autoreload
-%autoreload
+#%load_ext autoreload
+#%autoreload
 
 # <codecell>
 
 #Define SQS connection:
 q = conn.get_queue('EdgeFiles2Process')
-endq = conn.get_queue('Files2Ship')
+shipq = conn.get_queue('Files2Ship')
 q.set_message_class(boto.sqs.message.RawMessage)
 
 #Load in codebooks, hmms:
@@ -52,14 +52,14 @@ if rs:
         #print meta
         
         #Compute Summary Metrics
-        jsonSimscore = vm.summary_metrics(meta,data,np.diff)
+        jsonSimscore = vm.summary_metrics(meta,data)
         
         #Compute additional data validity metrics
         jsonSimscore = vm.data_metrics_append(jsonSimscore, data, filename)
         
         #Compute machine health metrics
         jsonSimscore = vm.machine_health_append(jsonSimscore, meta, data)
-        
+                
         #Given which hand and task it is,
             #Score against HMMs in memory
             #Append score to jsonSimscore
@@ -68,12 +68,12 @@ if rs:
         jsonSimscore = vm.round_dict(jsonSimscore,3)
         m = Message()
         m.set_body(json.dumps(jsonSimscore))
-        receipt = endq.write(m)
+        receipt = shipq.write(m)
         
         #If json is DEFINITELY received by new SQS, delete from original Files2Process queue
-        #if receipt:
-            #d = q.delete_message(rs)
-            #if d: print 'Deleted %s from queue' %filename
+        if receipt:
+            d = q.delete_message(rs)
+            if d: print 'Deleted %s from queue' %filename
             
     except:
         raise
@@ -97,17 +97,20 @@ print 'done'
 
 # <codecell>
 
+'''
 bucketname = 'incoming-simscore-org'
 filename = 'edge6/2012/11/05.19.16.31.340.3.txt'
-data, meta = shape.getData(filename, bucketname, is_secure=True)
+#data, meta = shape.getData(filename, bucketname, is_secure=True)
 #Compute Summary Metrics
 jsonSimscore = vm.summary_metrics(meta,data)
 #Compute additional data validity metrics
 jsonSimscore = vm.data_metrics_append(jsonSimscore, data, filename)
 #Compute machine health metrics
 jsonSimscore = vm.machine_health_append(jsonSimscore, meta, data)
+jsonSimscore = vm.round_dict(jsonSimscore,3)
 
 #print pp.pprint(jsonSimscore)
+'''
 
 # <codecell>
 

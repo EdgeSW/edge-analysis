@@ -34,9 +34,7 @@ jsonSimscore = vm.data_metrics_append(jsonSimscore, data, filename)
 
 # <codecell>
 
-
-# <codecell>
-
+jsonSimscore
 
 # <codecell>
 

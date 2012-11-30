@@ -3,41 +3,62 @@
 
 # <codecell>
 
-from computing_imports import *
-import fetch.shapeS3 as shape
-import fetch.fetchS3 as fetchS3
-import report.tools.validate as validate
+import sys, os
+sys.path.append('C:\\Users\\Tyler\\.ipython\\Simscore-Computing')
+
+import boto
+import json
+import pycurl
 import validity_metrics as vm
-%load_ext autoreload
-%autoreload
-from boto.sqs.message import Message
-conn = boto.connect_sqs(
-        aws_access_key_id='AKIAJFD5VPO6RFKGTWIA',
-        aws_secret_access_key='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')
-import pprint
-pp = pprint.PrettyPrinter(indent=4)
+import report.simscore as sim
+from fetch.mySQS import sqs_connection as conn
+import fetch.shapeS3 as shape
+
+
+c = pycurl.Curl() 
+
+compute = 'http://dev.simscore.md3productions.com/simscores-v1/machinereport'
+login = 'http://simscore.org/simscores-v1/user/login'
+#login = 'http://dev.simscore.md3productions.com/simscores-v1/user/login'
+
+p = sim.RESTfields(address=login)
+p.header = ['Content-Type: application/json']
+
+
+c, buf = sim.loginSimscore(c)
+print c.getinfo(pycurl.HTTP_CODE)
+print buf.getvalue()
 
 # <codecell>
 
-filename = 'edge6/2012/11/13.21.07.03.288.0.txt'#'edge6/2012/10/24.21.59.05.325.0.txt'
 bucketname = 'incoming-simscore-org'
-is_secure = False if '.' in bucketname else True
-data, meta = shape.getData(filename, bucketname, is_secure=is_secure)
-
-# <codecell>
-
-#pp = pprint.PrettyPrinter(indent=4)
-#pp.pprint(meta)
-#print data.dtype.names
-jsonSimscore = vm.summary_metrics(meta, data, np.diff)
+filename = 'edge6/2012/11/05.19.16.31.340.3.txt'
+data, meta = shape.getData(filename, bucketname, is_secure=True)
+#Compute Summary Metrics
+jsonSimscore = vm.summary_metrics(meta,data)
+#Compute additional data validity metrics
 jsonSimscore = vm.data_metrics_append(jsonSimscore, data, filename)
+#Compute machine health metrics
+jsonSimscore = vm.machine_health_append(jsonSimscore, meta, data)
+jsonSimscore = vm.round_dict(jsonSimscore,3)
+print 'jsonSimscore computed!'
 
 # <codecell>
 
-jsonSimscore
+pp = sim.RESTfields(address=compute, header=p.header, values=json.dumps(jsonSimscore))
+c, out = pp.posthttp(c)
+print c.getinfo(pycurl.HTTP_CODE)
+print out.getvalue()
 
 # <codecell>
 
+import time 
+time.sleep(2)
+c = sim.logoutSimscore(c)
+print c.getinfo(pycurl.HTTP_CODE)
+
+
+#print buf.getvalue()
 
 # <headingcell level=1>
 

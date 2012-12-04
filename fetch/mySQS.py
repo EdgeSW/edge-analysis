@@ -4,6 +4,10 @@ import json
 sqs_connection = boto.connect_sqs(
         aws_access_key_id='AKIAJFD5VPO6RFKGTWIA',
         aws_secret_access_key='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')
+		
+ses_conn = boto.connect_ses(
+        aws_access_key_id='AKIAJFD5VPO6RFKGTWIA',
+        aws_secret_access_key='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')
 
 def confirm_POST_subscription(conn = None):
     """Function goes to Amazon's SNS to confirm subscription to any given topic. Can easily subscribe via web interface. Requires

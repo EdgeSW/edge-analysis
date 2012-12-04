@@ -77,4 +77,9 @@ def download_codebook(date):
 
 # <codecell>
 
+def score_test(jsonSimscore):
+    return None
+
+# <codecell>
+
 

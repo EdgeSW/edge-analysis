@@ -21,7 +21,9 @@ import pickle
 
 # <codecell>
 
-class 
+class Score(object):
+    '''class container for scoring an EDGE test'''
+    pass
 
 # <codecell>
 

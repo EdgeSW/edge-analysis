@@ -11,8 +11,8 @@ import json
 import pycurl
 import validity_metrics as vm
 import report.simscore as sim
-from fetch.mySQS import sqs_connection as conn
 import fetch.shapeS3 as shape
+from aws import aws_ak, aws_sk
 
 # <codecell>
 
@@ -77,6 +77,10 @@ json.dumps({'username': 'grading', 'password': 'r*tFQqmb'})
 
 # <codecell>
 
+conn = boto.connect_sqs(
+        aws_access_key_id=aws_access_key,
+        aws_secret_access_key=aws_secret_key)
+
 q = conn.get_queue('EdgeFiles2Process')
 q.set_message_class(boto.sqs.message.RawMessage)
 rs = q.read()
@@ -106,6 +110,51 @@ for i in range(1, 11):
    m.set_body(json.dumps(jsonSimscore))
    qq.write(m)
 
+
+# <headingcell level=2>
+
+# SDB
+
+# <codecell>
+
+import sys, os, boto
+sys.path.append('C:\\Users\\Tyler\\.ipython\\Simscore-Computing')
+from aws import aws_access_key, aws_secret_key
+
+conn = boto.connect_sdb(
+        aws_access_key_id=aws_access_key,
+        aws_secret_access_key=aws_secret_key)
+
+# <codecell>
+
+domain = conn.get_domain('ProcessedEdgeFiles')
+
+item = domain.new_item('edge12/2013/10/14.17.08.01.109.2')
+item['IsProcessed'] = True
+item['IsSent'] = False
+item['UploadDate'] = '2012/11/14.17.08.01'
+item['Score'] = 1
+item['UserID'] = 192
+item.save()
+
+# <codecell>
+
+domain.put_attributes('edge12/2013/10/14.17.08.01.109.2',{'Score':'55'},replace=False)
+
+# <codecell>
+
+data = domain.get_item('edge12/2013/11/14.17.08.01.109.2')
+
+# <codecell>
+
+dom_name = 'ProcessedEdgeFiles'
+#syntax: select * from `ProcessedEdgeFiles` where Score>'2' 
+#alt syntax: select * from `ProcessedEdgeFiles` where IsSent='True' and IsProcessed='True'
+query = "select {0} from `{1}` where {2}".format('*', dom_name, "IsSent='True' ")
+print query
+rs = domain.select(query)
+for item in rs:
+    print item.name, item
 
 # <codecell>
 

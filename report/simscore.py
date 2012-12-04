@@ -35,8 +35,9 @@ class RESTfields(object):
 
     
 
-def loginSimscore(c, address=None):
+def loginSimscore(address=None):
     '''Login to Simscore with Grading account'''
+    c = pycurl.Curl() 
     p = RESTfields(address=address, header=['Content-Type: application/json'], newcookie=True)
     
     if address==None: p.address='http://simscore.org/simscores-v1/user/login'

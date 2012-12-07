@@ -10,10 +10,13 @@ from scoring import *
 import scipy.cluster.vq as vq
 import nltk, pdb
 import pickle, cStringIO, ast, json, os
-import scoring as scoring
 import fetch.shapeS3 as shape
 import fetch.fetchS3 as fetchS3
 import pickle
+from collections import defaultdict
+
+%load_ext autoreload
+%autoreload 2
 
 # <headingcell level=4>
 
@@ -21,49 +24,8 @@ import pickle
 
 # <codecell>
 
-class Score(object):
-    '''class container for scoring an EDGE test'''
-    pass
-
-# <codecell>
-
-def load_pickle(filepath):
-    '''opens and closes pickled file and returns contained pickleobj'''
-    #try:
-    f = open(filepath, 'r')
-    var = pickle.load(f)
-    f.close()
-    return var    
-
-# <codecell>
-
-### Get Codebook if Needed
-if 'C:\\' in os.getcwd(): prefix = 'C:\\Users\\Tyler\\.ipython\\Simscore-Computing\\'
-else: prefix = ''
-l = 'sut_cdbkL'
-r = 'sut_cdbkR'
-
-sut_cdbkL = load_pickle(prefix+l)
-sut_cdbkR = load_pickle(prefix+r)
-
-
-###Open Saved HMM 
-suturingNovL = load_pickle(prefix+'suturingNovL')
-suturingExpL = load_pickle(prefix+'suturingExpL')
-
-print suturingExpL
-
-# <codecell>
-
-'''import pickle
-# now create a file
-# replace filename with the file you want to create
-file = open('sut_cdbkR', 'w')
-# now let's pickle picklelist
-pickle.dump(sut_cdbkR,file)
-# close the file, and your pickling is complete
-file.close()'''
-
+h = scoring.HMM()
+h.load(path='C:\\Users\\Tyler\\.ipython\\Simscore-Computing\\')
 
 # <codecell>
 
@@ -72,13 +34,22 @@ from numpy import genfromtxt
 
 #'Time' 'Q1L' 'Q2L' 'dL' 'Q3L-rel' 'QgL' 'FgL' 'Q1R' 'Q2R' 'dR' 'Q3R-rel' 'QgR' 'FgR' 'xL' 'yL' 'zL' 'xR' 'yR' 'zR'
 #exam_rawdata = genfromtxt(r'C:\Users\Tyler\Google Drive\CSVs\LSU_Subj205_Suturing_01.27.2011-11.05.41_EDGE3.txt', delimiter=',') #A true Novice
+#exam_rawdata = genfromtxt(r'C:\Users\Tyler\Google Drive\CSVs\LSU_Subj223_Suturing_01.29.2011-15.13.30_EDGE3.txt ', delimiter=',')# A true Expert
 
-'''filename = 'edge6/2012/10/24.21.59.05.325.0.txt'
+filename = 'edge6/2012/10/24.21.59.05.325.0.txt'
 bucketname = 'incoming-simscore-org'
 is_secure = False if '.' in bucketname else True
-exam_rawdata, meta = shape.getData(filename, bucketname, is_secure=is_secure)'''
+exam_rawdata, meta = shape.getData(filename, bucketname, is_secure=is_secure)
 
-exam_rawdata = genfromtxt(r'C:\Users\Tyler\Google Drive\CSVs\LSU_Subj223_Suturing_01.29.2011-15.13.30_EDGE3.txt ', delimiter=',')# A true Expert
+
+
+# <codecell>
+
+def p(a,b):
+    return a, b
+
+a = p(3,6)
+print a
 
 # <headingcell level=4>
 
@@ -86,7 +57,11 @@ exam_rawdata = genfromtxt(r'C:\Users\Tyler\Google Drive\CSVs\LSU_Subj223_Suturin
 
 # <codecell>
 
-'''Segment the data that will be scored'''
+type(FgLR)
+
+# <codecell>
+
+'''Segment the data to be scored'''
 FgLR = exam_rawdata[:,[6,12]]
 seg_idxs = segment_exam('suturing',FgLR)
 

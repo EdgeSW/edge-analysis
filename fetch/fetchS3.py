@@ -1,3 +1,12 @@
+"""
+######################
+
+DEPRICATED FOR USE IN FUTURE COMPUTING, 
+TLH, 12/6/2012
+
+######################
+"""
+
 import boto
 import cStringIO
 import re
@@ -44,8 +53,8 @@ def getMetaFile(filename, bucketname='incoming-simscore-org', conn=None, is_secu
     returns a python dict
     '''
     bucket = getBucket(bucketname, conn) 
-    bKey = bucket.get_key(filename)
-    meta = bKey.get_contents_as_string()
+    bKey = bucket.get_key(filename) #boto.bucket
+    meta = bKey.get_contents_as_string() #boto.key
     return json.loads(meta)
 
 def getFilesPastDate(minfilename, bucketname='incoming-simscore-org', conn=None, is_secure=True):
@@ -147,12 +156,12 @@ def cleanFile(k):
 #    v0time = datetime.strptime('Mon, Jun 25 2012 14:28:27 GMT', '%a, %b %d %Y %H:%M:%S %Z')
 #    ktime = datetime.strptime(k.last_modified, '%a, %d %b %Y %H:%M:%S %Z')
     v0time = getFileDateFromKey('/edge0/2012/06/25.15.16.29.170.0.txt')
-    ktime = getFileDateFromKey(k.name)
+    ktime = getFileDateFromKey(k.name) #boto.key
     txt = cStringIO.StringIO()#open(k.name.split('/')[-1].strip(), 'w+')
     if ktime < v0time:
         return cleanFilev0(k, txt)
-    k.get_contents_to_file(txt)
-    txt.seek(0)
+    k.get_contents_to_file(txt) #boto.key
+    txt.seek(0) #seeks to start of file
     header = txt.readline().strip().split()  
     return txt, header
 

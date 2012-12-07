@@ -59,12 +59,14 @@ ranges = {
 isClipTask = lambda f: True if f[-5 :]=='3.txt' else False
 stringNaN = lambda m: 'NaN' if np.isnan(m) else m
 
+toolRight = "EdgeToolIdRight"
+toolLeft = "EdgeToolIdLeft"
+
 rating = lambda t: 'fail' if t else 'pass'
 
 conf =  lambda x: testnan(x)
 
-toolRight = "EdgeToolIdRight"
-toolLeft = "EdgeToolIdLeft"
+
 
 def testnan(x):
     try:

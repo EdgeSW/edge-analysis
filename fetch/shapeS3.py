@@ -1,3 +1,12 @@
+"""
+######################
+
+DEPRICATED FOR USE IN FUTURE COMPUTING, 
+TLH, 12/6/2012
+
+######################
+"""
+
 import numpy as np
 import json
 import fetchS3

@@ -10,19 +10,40 @@ maxfile, data = shape.getAllDataAfter(minfilename=minfilename, bucketname=bucket
 
 # <codecell>
 
-# now create a file
-# replace filename with the file you want to create
-file = open('2012.7.13_data_onwards.txt', 'wb')
-# now let's pickle picklelist
-pickle.dump(data,file)
-# close the file, and your pickling is complete
+file = open('2012.7.13_data_onwards', 'rb')
+data = pickle.load(file)
 file.close()
 
 # <codecell>
 
-file = open('2012.7.13_data_onwards.txt', 'rb')
-data = pickle.load(file)
-file.close()
+import sys, os
+sys.path.append('C:\\Users\\Tyler\\.ipython\\Simscore-Computing')
+import numpy as np
+from fetch.configuration import dtype
+import pickle
+import ast, json
+
+v = data[data.keys()[4]]
+'''
+x = ast.literal_eval(data[data.keys()[4]][1])
+print type(dtype)
+xx = np.array(x, dtype)#, dtype)
+print xx
+'''
+x = json.loads(v[1])
+xx = np.array(x)#, dtype=np.dtype(dtype))
+print type(xx)
+xx.dtype = np.dtype(dtype)
+
+#yy = np.rec.array(xx, np.dtype(dtype))
+
+print xx['Lin_L']
+
+# <codecell>
+
+k = 'edge8/2012/12/06.18.37.47.109.3'
+isClipTask = k[-1] == '3'
+isClipTask
 
 # <codecell>
 
@@ -36,7 +57,7 @@ import validity_metrics as vm
 drift = {}
 
 for k, v in data.iteritems():
-
+    
     #v= data.values()[4]
     
     if len(v)>1:
@@ -75,4 +96,15 @@ for k, v in drift.iteritems():
 import matplotlib
 fig = plt.figure()
 n, bins, patches = hist( ggg ,50)
+
+# <codecell>
+
+
+# now create a file
+# replace filename with the file you want to create
+file = open('2012.7.13_data_onwards.txt', 'wb')
+# now let's pickle picklelist
+pickle.dump(data,file)
+# close the file, and your pickling is complete
+file.close()
 

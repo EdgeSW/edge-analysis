@@ -3,16 +3,43 @@
 
 # <codecell>
 
-import sys, os
-sys.path.append('C:\\Users\\Tyler\\.ipython\\Simscore-Computing')
-
 import boto
-import json
-import pycurl
-import validity_metrics as vm
-import report.simscore as sim
-import fetch.shapeS3 as shape
+sys.path.append('C:\\Users\\Tyler\\.ipython\\Simscore-Computing')
+import fetch.myS3 as myS3
 from aws import aws_ak, aws_sk
+from datetime import datetime
+import json
+import cStringIO
+
+
+bucketname='incoming-simscore-org'
+minfilename = 'edge6/2012/12/05.21.59.05.325.0.txt'
+mindate = myS3.getFileDateFromKey(minfilename)
+maxdate = datetime.now()
+
+conn = boto.connect_s3(aws_ak, aws_sk)
+bucket = conn.get_bucket(bucketname)
+        
+start = datetime.now()
+
+
+meta = myS3.getMetaDataBetween(mindate, maxdate, bucket)
+
+# <codecell>
+
+v = meta[meta.keys()[0]]
+print type(v['IsPracticeTest'])
+isPractice = lambda v: v['IsPracticeTest']
+
+end = datetime.now()-start
+print end
+
+# <codecell>
+
+
+# <headingcell level=1>
+
+# SQS 
 
 # <codecell>
 
@@ -22,69 +49,24 @@ c = pycurl.Curl()
 compute = 'http://dev.simscore.md3productions.com/simscores-v1/machinereport'
 #login = 'http://simscore.org/simscores-v1/user/login'
 login = 'http://dev.simscore.md3productions.com/simscores-v1/user/login'
-
-
-
-%load_ext autoreload
-if sim.is_expired_cookie(c):
-    c, buf = sim.loginSimscore(c, address=login)
-    print c.getinfo(pycurl.HTTP_CODE)
-    print buf.getvalue()
-
-# <codecell>
-
-bucketname = 'incoming-simscore-org'
-filename = 'edge6/2012/11/05.19.16.31.340.3.txt'
-data, meta = shape.getData(filename, bucketname, is_secure=True)
-#Compute Summary Metrics
-jsonSimscore = vm.summary_metrics(meta,data)
-#Compute additional data validity metrics
-jsonSimscore = vm.data_metrics_append(jsonSimscore, data, filename)
-#Compute machine health metrics
-jsonSimscore = vm.machine_health_append(jsonSimscore, meta, data)
-jsonSimscore = vm.round_dict(jsonSimscore,3)
-print 'jsonSimscore computed!'
-
-# <codecell>
-
-compute = 'http://dev.simscore.md3productions.com/simscores-v1/machinereport' 
-pp = sim.RESTfields(address=compute, header=['Content-Type: application/json'], values=json.dumps(jsonSimscore))
-c, out = pp.posthttp(c)
-print c.getinfo(c.HTTP_CODE)
-print out.getvalue()
-
-# <codecell>
-
-(c.HTTP_CODE)
-
-# <codecell>
-
-import time 
 logout='http://dev.simscore.md3productions.com/simscores-v1/user/logout'
-c = sim.logoutSimscore(c, address=logout)
-print c.getinfo(pycurl.HTTP_CODE)
-
-
-#print buf.getvalue()
-
-# <codecell>
-
-json.dumps({'username': 'grading', 'password': 'r*tFQqmb'})
-
-# <headingcell level=1>
-
-# SQS 
 
 # <codecell>
 
 conn = boto.connect_sqs(
-        aws_access_key_id=aws_access_key,
-        aws_secret_access_key=aws_secret_key)
+        aws_access_key_id=aws_ak,
+        aws_secret_access_key=aws_sk)
 
 q = conn.get_queue('EdgeFiles2Process')
 q.set_message_class(boto.sqs.message.RawMessage)
 rs = q.read()
-print rs.get_body()
+#print rs.get_body()
+
+# <codecell>
+
+conn = boto.connect_sqs(aws_access_key_id=aws_ak, aws_secret_access_key=aws_sk)
+q = conn.get_queue('Files2Ship')
+q.get_attributes()
 
 # <codecell>
 
@@ -114,6 +96,11 @@ for i in range(1, 11):
 # <headingcell level=2>
 
 # SDB
+
+# <codecell>
+
+i='s'
+assert type(i) is int, "i is not an integer: %r" % i
 
 # <codecell>
 

@@ -3,6 +3,72 @@
 
 # <codecell>
 
+import os
+
+# <codecell>
+
+def load_pickle(filepath, ftype='r'):
+    '''opens and closes pickled file and returns contained pickleobj'''
+    
+    f = open(filepath, ftype)
+    contents = pickle.load(f)
+    f.close()
+    return contents    
+
+# <codecell>
+
+class Score(object):
+    '''class container for scoring an EDGE test'''
+    def __init__(self, task=None, skill=None, left=0, right=0):
+        self.task = task
+        self.skill = skill
+        self.left = left
+        self.right = right
+        
+    def __add__(self, other):
+        if isinstance(other, Score):
+            return self.score()+other.score()
+        else:
+            raise ValueError, 'Not a Score instance'
+        
+    def score(self):
+        return self.left+self.right
+        
+    
+     
+class HMM(object):
+    '''to easily access all codebooks, trained model for scoring'''
+    def __init__(self, codebook=None, model=None):
+        self.codebook = codebook
+        self.model = model     
+        self.tasks = ['pegtransfer','cutting','suturing']
+        self.hands = ['left','right']
+        self.skills = ['expert','novice']
+        
+    def load(self, cdbk_ver='v1', model_ver='v1', lf=load_pickle, path=os.getcwd()):
+        
+        self.codebook = { } 
+        self.model = {}
+        
+        for task in self.tasks:
+            self.codebook[task] = {}
+            for hand in self.hands:
+                fname = '_'.join([task,hand,cdbk_ver])
+                try: self.codebook[task][hand] = lf(path+fname)
+                except: self.codebook[task][hand] = None
+        
+        for task in self.tasks:
+            self.model[task] = {}
+            for hand in self.hands:
+                self.model[task][hand] = {}
+                for skill in self.skills:
+                    fname = '_'.join([task,hand,skill,model_ver])
+                    try: self.model[task][hand][skill] = lf(path+fname)
+                    except: self.model[task][hand][skill] = None
+        
+
+# <codecell>
+
 from collections import defaultdict
 
 def getGrasps(seg_idxs, exam_rawdata):

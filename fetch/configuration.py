@@ -3,36 +3,12 @@ from collections import namedtuple
 # Ranges edited by TLH on 11/2 in part of Calibration overhaul.
 # See TLH Personal Note Documentation
 
-kinematics = {
-                 0: {'left':[]
-                     , 'right':[]}
-                ,1: {'left':[]
-                     , 'right':[]}
-                ,2: {'left':'-0.05140 0.57756 -0.81473 -6.60172 -0.81860 0.44294 0.36564 -14.56533 0.57205 0.68573 0.45003 13.97385 0.00000 0.00000 0.00000 1.00000'
-                     , 'right':'-0.06266 0.57186 -0.81801 6.80131 0.82311 -0.43386 -0.36641 -14.57807 -0.56438 -0.69624 -0.44368 13.93098 0.00000 0.00000 0.00000 1.00000'}
-                ,3: {'left':[]
-                     , 'right':[]}
-                ,4: {'left':[]
-                     , 'right':[]}
-                ,5: {'left':[]
-                     , 'right':[]}
-                ,6: {'left':'-0.06102 0.57388 -0.81667 -6.45954 -0.81560 0.44299 0.37223 -14.73327 0.57538 0.68879 0.44102 14.55966 0.00000 0.00000 0.00000 1.00000'
-                     , 'right':'-0.05939 0.57102 -0.81883 6.68960 0.83328 -0.42326 -0.35565 -14.68017 -0.54962 -0.70341 -0.45085 14.02663 0.00000 0.00000 0.00000 1.00000'}
-                ,7: {'left':[]
-                     , 'right':[]}
-                ,8: {'left':[]
-                     , 'right':[]}
-                ,9: {'left':[]
-                     , 'right':[]}
-                ,10: {'left':[]
-                      , 'right':[]}
-                ,11: {'left':[]
-                      , 'right':[]}
-                ,12: {'left':[]
-                      , 'right':[]}                 
+default_kinematics = {
+              'left':[]
+              ,'right':[]
+              }             
 
 
-                }
 
 ranges = {		
 			'%Time_V1'	: {'min': 0., 'max': None }
@@ -59,14 +35,12 @@ ranges = {
 isClipTask = lambda f: True if f[-5 :]=='3.txt' else False
 stringNaN = lambda m: 'NaN' if np.isnan(m) else m
 
-toolRight = "EdgeToolIdRight"
-toolLeft = "EdgeToolIdLeft"
+toolRight = "EdgeToolIdRightHex"
+toolLeft = "EdgeToolIdLeftHex"
 
 rating = lambda t: 'fail' if t else 'pass'
 
 conf =  lambda x: testnan(x)
-
-
 
 def testnan(x):
     try:
@@ -75,6 +49,8 @@ def testnan(x):
     except:
         return np.NaN
 
+
+        
 names = ['%Time_V1', 'J1_L', 'J2_L', 'Lin_L', 'Rot_L', 'ThG_L', 'Fg_L', 'J1_R', 'J2_R', 'Lin_R', 'Rot_R', 'ThG_R', 'Fg_R', 'X_L', 'Y_L', 'Z_L', 'X_R', 'Y_R', 'Z_R']
 formats = [np.float, np.float, np.float, np.float, np.float, np.float, np.float, np.float, np.float, np.float, np.float, np.float, np.float, np.float, np.float, np.float, np.float, np.float, np.float]
 dtype = {'names' : names, 'formats' : formats}
@@ -89,41 +65,3 @@ sensors = {'J1'  : ('J1_L', 'J1_R')
 		 , 'X'   : ('X_R', 'X_R')
 		 , 'Y'   : ('Y_R', 'Y_R')
 		 , 'Z'   : ('Z_R', 'Z_R')}
-
-pSuture = ['InstrumentLeftFieldOfView', 'DistanceFromTargetDot', 'BuckledPenrose',
-           'LessThan3KnotThrows','CanSlideOpen', 'AirKnot', 'BunnyEar',
-           'AvulseModelFromBoard', 'BrokeSutureOrBentNeedle', 'DroppedNeedle']
-
-pPegTransfer = ['InstrumentLeftFieldOfView', 'NumberDropped',
-				'NonMidAirTransferBetweenHands','DroppedOutsideTaskRegion']
-
-pCutting = ['InstrumentLeftFieldOfView', 'CuttingOutsideLines',
-			 'ToreOrPokedHole', 'ScissorTipsNotPointedToInterior',
-			 'AvulseTissueFromClamps', 'LeftToolIsScissors']
-
-pClipApply = ['InstrumentLeftFieldOfView', 'FailedToPutMinimum2ClipsBetweenLines',
-			  'FailedToPut4Clips', 'IncompleteCoaption', 'CrossingClips',
-		 	 'StraightCutOnMiddleDottedLine', 'GraspedTheRenalArtery']
-MetadatFieldNames = {'ProctorSuture' : ["AirKnot","AvulseModelFromBoard","EdgesAreNotApproximatedCloselyTogether",
-									    "DroppedNeedle","BrokeSutureOrBentNeedle", "BunnyEar","BrokeSuture",
-									    "InstrumentLeftFieldOfView","BuckledPenrose","LessThan3KnotThrows",
-									    "DistanceFromTargetDot", "BentNeedle",
-									    "DistanceFromTargetDotRight","DistanceFromTargetDotLeft",
-									    "CanSlideOpen"]
-
-                     , 'ProctorPegTransfer' : ["NonMidAirTransferBetweenHands", "DroppedOutsideTaskRegion", "InstrumentLeftFieldOfView", "NumberDropped"]
-
-                     , 'ProctorCutting' : ["LeftToolIsScissors", "NumberOfTimesOutsideTheLine", "ScissorTipsNotPointedToInterior",
-										   "AvulseTissueFromClamps", "InstrumentLeftFieldOfView", "CuttingOutsideLines", 
-										   "ToreOrPokedHole"] 
-
-                     , 'ProctorClipApply' : ["CrossingClips", "FailedToPutMinimum2ClipsBetweenLines", 
-											"InstrumentLeftFieldOfView", "StraightCutOnMiddleDottedLine", 
-											"IncompleteCoaption", "GraspedTheRenalArtery", "FailedToPut4Clips"]}
-
-metafields = ['MetaDataFileNameOnS3', 'DataFileNameOnS3', 'VideoFileNameOnS3', 
-              'EdgeUnitId', 'IsPracticeTest', 'IsCalibrationTrace', 'EdgeToolIdLeft',
-              'EdgeToolIdRight', 'ProctorCancelledTest', 'TestDurationInSeconds', 
-              'EdgeSoftwareVersion', 'ProctorSuture', 'ProctorPegTransfer', 'ProctorCutting', 
-              'ProctorClipApply']
-

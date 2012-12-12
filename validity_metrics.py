@@ -9,6 +9,7 @@ import json, string
 import time, datetime
 import report.validate as validate
 import pprint
+import boto
 
 # <headingcell level=4>
 
@@ -46,7 +47,7 @@ returns float if one array provided'''
 
 # <codecell>
 
-def summary_metrics(meta,data):
+def summary_metrics(meta,data,conn):
     jsonSimscore = {
                     
         #TestID    Int    The uniquely generated ID for this test score to associate all other data with.
@@ -106,16 +107,17 @@ def summary_metrics(meta,data):
     edgetime = '.'.join(filename[:6])
     jsonSimscore['UploadDateUnix'] = int(time.mktime(time.strptime(edgetime, '%Y.%m.%d.%H.%M.%S'))) 
 
-    #pathlength	Boolean	Total tool path length is above an accepted minimum
-    
-    #pathlenthvalue	String	
-
     #continuous	Boolean	Check for any temporal discontinuities 
     check = ok
     for x in np.diff(np.diff(data['%Time_V1']) ):
         if abs(x) > 0.005: check = bad
     jsonSimscore['Continuous'] = check
     
+    #VideoFileExists    Bool     Checks to see if the video file is on S3 at above location
+    if not meta["IsPracticeTest"]:
+        jsonSimscore['VideoFileExists'] = ok if conn.get_bucket('video-simscore-org').get_key(meta["VideoFileNameOnS3"]) else bad    
+    else: jsonSimscore['VideoFileExists'] = ok
+        
     return jsonSimscore
 
 #jsonSimscore = summary_metrics(meta,data,diff)
@@ -155,7 +157,6 @@ def machine_health_append(jsonSimscore, meta, data):
 
     #	kinematicsCheck	Boolean	Kinematics set to default values
     
-    #	md5hashCheck	Boolean	MD5 hash is intact
     
     #	ToolTipDriftValue	Float	
     jsonSimscore['ToolTipDriftValue'] = {'left':{'x': start_v_end(data['X_L']), 'y':start_v_end(data['Y_L']), 'z':start_v_end(data['Z_L'])}
@@ -180,7 +181,6 @@ def machine_health_append(jsonSimscore, meta, data):
     jsonSimscore['LastCalibration'] = str(temp[0]+' '+temp[1])
     
     #FailType	List of String	List of Failure Types for whole test: OB Data, Video Corruption
-
     possible_errors = ['NaNSensors','DeadSensors','OutOfRange','LinEncDrift','ToolTipDrift','BadFrames','Continuous','ProctorValuesCheck','TestLengthCheck']
     failtypes = []
     for error in possible_errors:

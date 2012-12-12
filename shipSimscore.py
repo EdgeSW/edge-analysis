@@ -12,13 +12,14 @@ sys.path.append('C:\\Users\\Tyler\\.ipython\\Simscore-Computing')
 
 import boto
 import json, time
-from datetime import datetime
+from datetime import datetime, timedelta
 import pycurl
 import validity_metrics as vm
 import report.simscore as sim
+import fetch.mySQS as mySQS
+import fetch.myS3 as myS3
 from aws import aws_ak, aws_sk
-
-from boto.sqs.message import Message
+from boto.sqs.message import Message, RawMessage
 
 def send_fail(failure, conn): 
     conn.send_email(source='thartley@simulab.com',
@@ -31,12 +32,19 @@ def logit(log, message):
     log.flush()
 
 def trysleeptimes(trys):
-    global sleeptimes=[0, 1, 10, 100, 200, 1000]
+    global sleeptimes
+    sleeptimes = [0, 1, 10, 100, 200, 1000]
     
     if trys < len(sleeptimes):
         time.sleep(sleeptimes[trys])
     else:
         time.sleep(sleeptimes[-1])
+        
+def queueLeftBehind(theforgotten, q=None):
+    '''writes list of messages to SQS'''
+    for f in theforgotten:
+        mySQS.append_to_queue({'Message': f[:-3]+'log'}, q, raw=True)
+
 
 # <codecell>
 
@@ -49,7 +57,6 @@ login = 'http://dev.simscore.md3productions.com/simscores-v1/user/login'
 c, buf = sim.loginSimscore(address=login)
 logit(log, 'Login response: '+str(c.getinfo(c.HTTP_CODE))+'\n'+buf.getvalue()+'\n')
 
-
 '''Define Connections'''
 sqs_conn = boto.connect_sqs(aws_ak, aws_sk)
 q = sqs_conn.get_queue('Files2Ship')
@@ -58,8 +65,13 @@ comq = sqs_conn.get_queue('EdgeFiles2Process')
 ses_conn = boto.connect_ses(aws_ak, aws_sk)
 #Connect to SimpleDB
 sdb_conn = boto.connect_sdb(aws_ak, aws_sk)
-sdb_domain = sbd_conn.get_domain('ProcessedEdgeFiles')
+sdb_domain = sdb_conn.get_domain('ProcessedEdgeFiles')
 
+
+last_check = datetime.now()
+last_big_check = datetime.now()
+
+# <codecell>
 
 '''Run Eternally'''
 #while True:
@@ -71,7 +83,7 @@ rs = q.read(wait_time_seconds=20)
 if rs:
     #Parse out json to be sent
     jsonSimscore = json.loads(rs.get_body())
-    logit(log, '*************************\n%s\n' %datetime.now())
+    logit(log, '--------------------\n%s\n' %datetime.now())
     logit(log,'Read in file '+jsonSimscore['TestID']+' from queue\n')
     print jsonSimscore['TestID']
     
@@ -103,28 +115,79 @@ if rs:
             if d: logit(log,'Messsage deleted from queue\n')
             break
             
-            
         #else if no response, don't receive 200, simscore down, etc:
         elif http_response in range(500,599):
             logit(log,'Simscore error, HTTP/1.1:%d, waiting %d seconds\n%s'%(http_response, sleeptimes[trys], out.getvalue()) )
             trysleeptimes(trys)
-            
             trys += 1
-            
             
         #else if error related to content of post, how post is made, 
         else:
+            rs.change_visibility(120) #if having local trouble with it, make invisible for 2 min
             #log&report error and filename
-            logit(log, 'Local error, HTTP: '+str(http_response)+'\n'+out.getvalue()+'\nSending email...')
+            logit(log, 'Local error, HTTP: '+str(http_response)+'\n'+out.getvalue()+'\nSending email...\n')
             
             #email me
             failmessage = 'Error sending '+jsonSimscore['TestID']+'\n'+'shipSimscore error: %d\n\n%s'%(http_response,out.getvalue())
             send_fail(failmessage, ses_conn)
             break
+
+# <codecell>
+
             
 #perform check on S3    
-elif sim.approx_total_messages(comq)==0:
-    #needs to be some sort of counter to see if it's a) really late at night, b) been at least 20hrs since last check
-    pass
-         
+elif mySQS.approx_total_messages(comq)==0 and datetime.now() > last_big_check+timedelta(seconds=7*24*3600):
+    last_big_check = datetime.now()
+    conn = boto.connect_s3(aws_ak, aws_sk)
+    theforgotten = myS3.getLeftBehind(daysback=30, conn=conn, sdb_domain=sdb_domain)
+    if len(theforgotten) > 0:
+        queueLeftBehind(theforgotten, comq)
+        logit(log,'ERROR: %d files on S3 do not match processed file list.\nAdded these files to queue:\n'%len(theforgotten))
+        for f in theforgotten: logit(log,'%s\n'%f)
+
+elif mySQS.approx_total_messages(comq)==0 and datetime.now() > last_check+timedelta(seconds=24*3600):
+    last_check = datetime.now()
+    conn = boto.connect_s3(aws_ak, aws_sk)
+    theforgotten = myS3.getLeftBehind(daysback=7, conn=conn, sdb_domain=sdb_domain)
+    if len(theforgotten) > 0:
+        queueLeftBehind(theforgotten, comq)
+        logit(log,'ERROR: %d files on S3 do not match processed file list.\nAdded these files to queue:\n'%len(theforgotten))
+        for f in theforgotten: logit(log,'%s\n'%f)
+
+# <headingcell level=3>
+
+# Unit Tests
+
+# <codecell>
+
+
+%load_ext autoreload
+%autoreload 2
+comq.clear()
+q.clear()
+print mySQS.approx_total_messages(comq)
+if mySQS.approx_total_messages(comq)==0 and datetime.now() > last_check+timedelta(seconds=5):
+    print 'processing'
+    last_check = datetime.now()
+    conn = boto.connect_s3(aws_ak, aws_sk)
+    theforgotten = myS3.getLeftBehind(daysback=5, conn=conn, sdb_domain=sdb_domain)
+    print theforgotten
+    
+    if len(theforgotten) > 0:
+        queueLeftBehind(theforgotten, comq)
+        logit(log,'ERROR: %d files on S3 do not match processed file list.\nAdded these files to queue:\n'%len(theforgotten))
+        for f in theforgotten: logit(log,'%s\n'%f)
+    
+
+# <codecell>
+
+rs = q.read(wait_time_seconds=20)
+jsonSimscore = json.loads(rs.get_body())
+
+# <codecell>
+
+print jsonSimscore
+
+# <codecell>
+
 

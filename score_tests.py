@@ -5,15 +5,17 @@
 
 import sys
 sys.path.append('C:\\Users\\Tyler\\.ipython\\Simscore-Computing')
-from datetime import datetime
 from scoring import *
+import fetch.myS3 as myS3
+from aws import aws_ak, aws_sk
+
+from datetime import datetime
 import scipy.cluster.vq as vq
 import nltk, pdb
 import pickle, cStringIO, ast, json, os
-import fetch.shapeS3 as shape
-import fetch.fetchS3 as fetchS3
-import pickle
+import boto
 from collections import defaultdict
+import numpy as np
 
 %load_ext autoreload
 %autoreload 2
@@ -24,7 +26,7 @@ from collections import defaultdict
 
 # <codecell>
 
-h = scoring.HMM()
+h = HMM()
 h.load(path='C:\\Users\\Tyler\\.ipython\\Simscore-Computing\\')
 
 # <codecell>
@@ -36,20 +38,10 @@ from numpy import genfromtxt
 #exam_rawdata = genfromtxt(r'C:\Users\Tyler\Google Drive\CSVs\LSU_Subj205_Suturing_01.27.2011-11.05.41_EDGE3.txt', delimiter=',') #A true Novice
 #exam_rawdata = genfromtxt(r'C:\Users\Tyler\Google Drive\CSVs\LSU_Subj223_Suturing_01.29.2011-15.13.30_EDGE3.txt ', delimiter=',')# A true Expert
 
-filename = 'edge6/2012/10/24.21.59.05.325.0.txt'
-bucketname = 'incoming-simscore-org'
-is_secure = False if '.' in bucketname else True
-exam_rawdata, meta = shape.getData(filename, bucketname, is_secure=is_secure)
-
-
-
-# <codecell>
-
-def p(a,b):
-    return a, b
-
-a = p(3,6)
-print a
+filename = 'edge9/2012/12/11.22.43.10.109.0.txt'
+conn = boto.connect_s3(aws_ak, aws_sk)
+bucket = conn.get_bucket('incoming-simscore-org')
+data, meta = myS3.getData(filename=filename, bucket=bucket, labeled=True)
 
 # <headingcell level=4>
 
@@ -57,15 +49,10 @@ print a
 
 # <codecell>
 
-type(FgLR)
-
-# <codecell>
-
 '''Segment the data to be scored'''
-FgLR = exam_rawdata[:,[6,12]]
+FgLR = np.vstack((data['Fg_L'], data['Fg_R'])).conj().transpose()
 seg_idxs = segment_exam('suturing',FgLR)
-
-graspsegsLR = getGrasps(seg_idxs, exam_rawdata)
+graspsegsLR = getGrasps(seg_idxs, exam_rawdata) #can we just replace exam_rawdata with FgQgL etc?
 
 
 # <headingcell level=4>

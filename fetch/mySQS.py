@@ -1,11 +1,11 @@
 import boto
 import json
-
+from boto.sqs.message import Message, RawMessage
 
 
 def confirm_POST_subscription(conn = None):
-    """Function goes to Amazon's SNS to confirm subscription to any given topic. Can easily subscribe via web interface. Requires
-       up & running port, etc. Defaults to Tyler's AWS credentials unless supplied with others"""
+    '''Function goes to Amazons SNS to confirm subscription to any given topic. Can easily subscribe via web interface. Requires
+       up & running port, etc. Defaults to Tylers AWS credentials unless supplied with others'''
     if conn == None:
         conn = boto.connect_sns(aws_access_key_id='AKIAJFD5VPO6RFKGTWIA',
             aws_secret_access_key='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')
@@ -30,3 +30,14 @@ def approx_total_messages(q):
 	'''Running this function ~1000x on a queue containing 1 message returned 
 	total num messages==1 all 1000 times. Appears to be trustworthy on boolean check'''
 	return sum(int(q.get_attributes()[v]) for v in ['ApproximateNumberOfMessages','ApproximateNumberOfMessagesDelayed','ApproximateNumberOfMessagesNotVisible'])
+    
+def append_to_queue(content, queue, raw=False): 
+    '''Queues a message to SQS with a specific message'''
+    body = json.dumps(content)
+    m = RawMessage() if raw else Message()
+    m.set_body(body)
+    receipt = queue.write(m)
+    return receipt
+
+
+###

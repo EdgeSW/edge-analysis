@@ -1,16 +1,5 @@
-'''
-Created on 2012-06-25
-
-@author: rutje
-'''
 import numpy as np
 from fetch.configuration import ranges
-
-class Test(object):
-	def printme(self,x):
-		print 'it is x: ' +x
-		
-		
 
 def findMinMax(data):    
     data.dtype.names

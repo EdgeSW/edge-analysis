@@ -4,6 +4,7 @@
 # <codecell>
 
 import os
+import pickle
 
 # <codecell>
 
@@ -14,6 +15,13 @@ def load_pickle(filepath, ftype='r'):
     contents = pickle.load(f)
     f.close()
     return contents    
+
+def save_pickle(content, filepath, ftype='w'):
+    
+    f = open(filepath, ftype)
+    xx = pickle.dump(content, filepath)
+    f.close()
+    return xx
 
 # <codecell>
 
@@ -143,8 +151,11 @@ def download_codebook(date):
 
 # <codecell>
 
-def score_test(jsonSimscore):
-    return None
+def score_test(data, meta):
+    if meta["IsPracticeTest"] == True:
+        return None
+    else:
+        return None
 
 # <codecell>
 

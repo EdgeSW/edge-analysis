@@ -34,9 +34,6 @@ isPractice = lambda v: v['IsPracticeTest']
 end = datetime.now()-start
 print end
 
-# <codecell>
-
-
 # <headingcell level=1>
 
 # SQS 

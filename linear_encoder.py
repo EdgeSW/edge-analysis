@@ -3,84 +3,62 @@
 
 # <codecell>
 
-minfilename = 'edge6/2012/7/13.21.07.03.288.0.txt'#'edge6/2012/10/24.21.59.05.325.0.txt'
-bucketname = 'incoming-simscore-org'
-is_secure = False if '.' in bucketname else True
-maxfile, data = shape.getAllDataAfter(minfilename=minfilename, bucketname=bucketname, is_secure=is_secure)
+import sys, os
+sys.path.append('C:\\Users\\Tyler\\.ipython\\Simscore-Computing')
+
+import numpy as np
+import pickle
+import ast, json
+import fetch.myS3 as myS3
+import validity_metrics as vm
 
 # <codecell>
 
-file = open('2012.7.13_data_onwards', 'rb')
+minfilename = 'edge6/2012/7/13.21.07.03.288.0.txt'
+mindate = myS3.getFileDateFromKey(minfilename)
+
+data = myS3.getDataBetween(mindate=mindate, labeled=True, includeMeta=True, includePractice=False)
+
+# <codecell>
+
+file = open('data_past_7.13.2012', 'rb')
 data = pickle.load(file)
 file.close()
 
-# <codecell>
-
-import sys, os
-sys.path.append('C:\\Users\\Tyler\\.ipython\\Simscore-Computing')
-import numpy as np
-from fetch.configuration import dtype
-import pickle
-import ast, json
-
-v = data[data.keys()[4]]
-'''
-x = ast.literal_eval(data[data.keys()[4]][1])
-print type(dtype)
-xx = np.array(x, dtype)#, dtype)
-print xx
-'''
-x = json.loads(v[1])
-xx = np.array(x)#, dtype=np.dtype(dtype))
-print type(xx)
-xx.dtype = np.dtype(dtype)
-
-#yy = np.rec.array(xx, np.dtype(dtype))
-
-print xx['Lin_L']
 
 # <codecell>
 
-k = 'edge8/2012/12/06.18.37.47.109.3'
-isClipTask = k[-1] == '3'
-isClipTask
+n = 'edge2/2012/12/06.14.51.35.354.0.txt'
+data[n]['data']
 
 # <codecell>
 
-import sys, os
-sys.path.append('C:\\Users\\Tyler\\.ipython\\Simscore-Computing')
-
-import ast
-import pickle
-import numpy as np
-import validity_metrics as vm
 drift = {}
 
 for k, v in data.iteritems():
     
-    #v= data.values()[4]
-    
-    if len(v)>1:
-        try:
-            xx = np.array(ast.literal_eval(v[1]))
-            #item 3 is Lin_L, item 9 is Lin_R
-            ld = round(vm.start_v_end(xx[:,3]), 4)
-            rd = round(vm.start_v_end(xx[:,9]), 4)
-            
-            if v[0]['EdgeToolIdLeftHex'] in drift.keys():
-                drift[v[0]['EdgeToolIdLeftHex']].append([ld, k])
-            else:
-                drift[v[0]['EdgeToolIdLeftHex']] = [[ld, k]]
-                
-            if v[0]['EdgeToolIdRightHex'] in drift.keys():
-                drift[v[0]['EdgeToolIdRightHex']].append([rd, k])
-            else:
-                drift[v[0]['EdgeToolIdRightHex']] = [[rd, k]]
-              
-        except:
-            #print 'bad data from:',k
-            pass
+    #v= data.values()[0]
+    #k = data.keys()[0]
+
+    try:
+        xx = v['data']
+        ld = round(vm.start_v_end(xx['Lin_L']), 4)
+        rd = round(vm.start_v_end(xx['Lin_R']), 4)
         
+        if v['meta']['EdgeToolIdLeftHex'] in drift.keys():
+            drift[v['meta']['EdgeToolIdLeftHex']].append([ld, k])
+        else:
+            drift[v['meta']['EdgeToolIdLeftHex']] = [[ld, k]]
+            
+        if v['meta']['EdgeToolIdRightHex'] in drift.keys():
+            drift[v['meta']['EdgeToolIdRightHex']].append([rd, k])
+        else:
+            drift[v['meta']['EdgeToolIdRightHex']] = [[rd, k]]
+          
+    except:
+        print 'bad data from:',k
+        pass
+print len(drift)
 
 # <codecell>
 

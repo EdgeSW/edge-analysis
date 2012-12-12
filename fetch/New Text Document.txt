@@ -1,10 +1,8 @@
 import json, cStringIO
-from datetime import datetime, timedelta
+from datetime import datetime
 from fetch.configuration import formats
 from fetch.configuration import converterdict
 import numpy as np
-import boto
-from aws import aws_ak, aws_sk
 
 edges = ['edge0/', 'edge1/', 'edge10/', 'edge11/', 'edge12/', 'edge2/', 'edge3/', 'edge4/', 'edge5/', 'edge6/', 'edge7/', 'edge8/', 'edge9/']
 
@@ -12,7 +10,6 @@ edges = ['edge0/', 'edge1/', 'edge10/', 'edge11/', 'edge12/', 'edge2/', 'edge3/'
 def getRawData(bucket=None, filename=None, labeled=False):
     '''Pull and format raw data from a .txt file on S3. Return as
     Numpy array of 64bit floats'''
-    if bucket == None: bucket = getBucketConn()
     bKey = bucket.get_key(filename)
     
     txt, header = cleanRaw(bKey)
@@ -20,9 +17,7 @@ def getRawData(bucket=None, filename=None, labeled=False):
     
 def getMetaData(bucket=None, filename=None):  
     '''Returns the metadata .log file associated with a .txt raw data file'''
-    if bucket == None: bucket = getBucketConn()
     if filename[-3:] == 'txt': filename = filename[:-3]+'log'
-    
     bKey = bucket.get_key(filename) #boto.bucket
     meta = bKey.get_contents_as_string() #boto.key
     return json.loads(meta)
@@ -30,7 +25,6 @@ def getMetaData(bucket=None, filename=None):
 def getData(bucket=None, filename=None, labeled=False):
     '''Fetches both raw and meta data from S3. Labeled parameter asks if you want the data
     returned with an associated dtype or not (see dataParse below)'''
-    assert bucket, 'Please provide a bucket or S3 connection instance'
     data = getRawData(bucket, filename, labeled)
     meta = getMetaData(bucket, filename)
     return data, meta
@@ -39,7 +33,6 @@ def getFilesBetween(mindate=None, maxdate=datetime.now(), bucket=None, onlyTxtFi
     '''Fetch a list of EVERY file on S3 between given dates. MUCH faster than retreiving 
     all file keys and then parsing, especially as S3 grows. I know its a lot of for loops, deal with it
     Output: files is a list of strings'''
-    if bucket == None: bucket = getBucketConn()
     dates_in_range = datesInRange(mindate,maxdate)
     files = []
     for edge in edges:  #edges imported above
@@ -53,10 +46,9 @@ def getFilesBetween(mindate=None, maxdate=datetime.now(), bucket=None, onlyTxtFi
     #files is a list of strings                
     return files
     
-def getDataBetween(mindate=None, maxdate=datetime.now(), bucket=None, labeled=False, includeMeta=True, includePractice=True):
+def getDataBetween(mindate=None, maxdate=None, bucket=None, labeled=False, includeMeta=True, includePractice=True):
     '''Returns data between two dates as dict, can include meta data if you want.
     Basically a glorified wrapper for getDataFromTxtFileList'''
-    if bucket == None: bucket = getBucketConn()
     files = getFilesBetween(mindate, maxdate, bucket, onlyTxtFiles=True)
     return getDataFromTxtFileList(bucket, files, labeled, includeMeta, includePractice)
 
@@ -64,7 +56,6 @@ def getDataFromTxtFileList(bucket=None, files=None, labeled=False, includeMeta=T
     '''Given a list of .txt files on S3, will return data associated with each file in that list.
     MUST be given only list of .txt files. If you want only meta data, use getMetaDataBetween()
     Can be set to return meta data too. Can return data as "labeled" data with assigned dtype. '''
-    if bucket == None: bucket = getBucketConn()
     allData = {}
     for f in files:
         if not includePractice: 
@@ -80,21 +71,13 @@ def getDataFromTxtFileList(bucket=None, files=None, labeled=False, includeMeta=T
 
 def getMetaDataBetween(mindate=None, maxdate=None, bucket=None):
     '''Go get only meta data between 2 dates'''
-    if bucket == None: bucket = getBucketConn()
     meta = {}
     files = getFilesBetween(mindate, maxdate, bucket, onlyTxtFiles=False)
     for f in files:
         if f[-3:]=='log': meta[f] = getMetaData(bucket, f)
     return meta  
 
-def getLeftBehind(daysback, conn=None, sdb_domain=None):
-    '''locate files on S3 that have not been added as items to a SimpleDB domain'''
-    mindate = datetime.now() -timedelta(days=daysback)
-    s3_files = getFilesBetween(mindate, datetime.now(), conn.get_bucket('incoming-simscore-org'), onlyTxtFiles=True)
-    sdb_items = [item.name for item in sdb_domain]
-    
-    return [f for f in s3_files if f[:-4] not in sdb_items]
-    
+
     
 
 def getFileDateFromKey(keyName): 
@@ -150,8 +133,7 @@ def getEdgeFolderNamesOnS3(conn=None, bucketname='incoming-simscore-org'):
     bucket = conn.get_bucket(bucketname); edges=[]
     return [edges.append(str(key.name)) for key in bucket.list(prefix='edge', delimiter='/')]
 
-def getBucketConn(bucketname='incoming-simscore-org'):
-    conn = boto.connect_s3(aws_ak, aws_sk)
-    return conn.get_bucket(bucketname)
+
+    
     
     

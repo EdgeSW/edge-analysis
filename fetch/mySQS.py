@@ -6,10 +6,7 @@ from boto.sqs.message import Message, RawMessage
 def confirm_POST_subscription(conn = None):
     '''Function goes to Amazons SNS to confirm subscription to any given topic. Can easily subscribe via web interface. Requires
        up & running port, etc. Defaults to Tylers AWS credentials unless supplied with others'''
-    if conn == None:
-        conn = boto.connect_sns(aws_access_key_id='AKIAJFD5VPO6RFKGTWIA',
-            aws_secret_access_key='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')
-    
+    assert conn, "Please provide a boto SNS connection object"    
     message = json.loads(request.data)
     if message["Type"] == "SubscriptionConfirmation":
         token = message["Token"]

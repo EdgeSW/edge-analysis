@@ -81,6 +81,8 @@ def summary_metrics(meta,data,conn):
         ,'BadFramesCount': meta['VideoDroppedFrameCount']
         #BadFramesCheck bool        serious amount of dropped frames
         ,'BadFrames': ok if meta['VideoDroppedFrameCount'] < 30 else bad
+        #IsUpdate   Bool   Set to False for all first time tests. must manually set to true to update Simscore's entry for this test
+        ,'IsUpdate': False
                     }
 
     #ProctorValues
@@ -110,13 +112,14 @@ def summary_metrics(meta,data,conn):
     #continuous	Boolean	Check for any temporal discontinuities 
     check = ok
     for x in np.diff(np.diff(data['%Time_V1']) ):
-        if abs(x) > 0.005: check = bad
+        if abs(x) > 0.05: check = bad
     jsonSimscore['Continuous'] = check
     
     #VideoFileExists    Bool     Checks to see if the video file is on S3 at above location
     if not meta["IsPracticeTest"]:
         jsonSimscore['VideoFileExists'] = ok if conn.get_bucket('video-simscore-org').get_key(meta["VideoFileNameOnS3"]) else bad    
     else: jsonSimscore['VideoFileExists'] = ok
+        
         
     return jsonSimscore
 

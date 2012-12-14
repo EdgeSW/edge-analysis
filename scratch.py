@@ -34,6 +34,13 @@ isPractice = lambda v: v['IsPracticeTest']
 end = datetime.now()-start
 print end
 
+# <codecell>
+
+#Add some fake SNS messages to the queue
+sns_conn = boto.connect_sns(aws_ak, aws_sk)
+for i in range(5):
+    sns_conn.publish('arn:aws:sns:us-east-1:409355352037:test','edge6/2012/11/05.19.16.31.340.3.txt',subject='EdgeData')
+
 # <headingcell level=1>
 
 # SQS 

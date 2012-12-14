@@ -8,7 +8,7 @@
 # <codecell>
 
 import sys, os
-sys.path.append('C:\\Users\\Tyler\\.ipython\\Simscore-Computing')
+#sys.path.append('C:\\Users\\Tyler\\.ipython\\Simscore-Computing')
 import boto, time, json, pprint
 from datetime import datetime
 import numpy as np
@@ -32,18 +32,12 @@ def logit(log, message):
     log.flush()
     
 def add_file_sdb(domain, meta):
-    attrs = {'IsProcessed':True, 'IsSent':False, 'UploadDateUnix':meta['UploadDateUnix'], 'UploadDate':meta['UploadDate'],'Score':meta['Score'], 
-            'FailTypes':meta['FailTypes'], 'IsPractice':meta['IsPractice'], 'UserID':meta['UserID']}
+    attrs = {'IsProcessed':True, 'IsSent':False, 'UploadDateUnix':meta['UploadDateUnix'], 'UploadDate':meta['UploadDate']
+            ,'Score':meta['Score'], 'FailTypes':json.dumps(meta['FailTypes'])
+            , 'IsPractice':meta['IsPractice'], 'UserID':meta['UserID'], 'RToolID': meta['RToolID'] , 'LToolID': meta['LToolID']}
     return domain.put_attributes(meta['TestID'],attrs)
 
-    
-#add if __name__ == '__main__':
-
 # <codecell>
-
-# Open up log file to write pycurl info to
-log = open (os.getcwd()+'\\ComputeFails.log', 'a')
-logit(log,'{0}\n{1}\n{2}\n{0}\n'.format('*'*26,datetime.now(),'Booting up computeSimscore.py'))
 
 '''Define Connections'''
 #connect to S3
@@ -64,8 +58,7 @@ sdb_domain = sdb_conn.get_domain('ProcessedEdgeFiles')
 
 # <codecell>
 
-'''Run Eternally'''
-while True:  
+def main():  
     
     #Get a file off the SQS stack using 20sec long poll
     rs = q.read(wait_time_seconds=20)
@@ -118,42 +111,19 @@ while True:
             logit(log, 'ERROR: %s\n'%str(err) )
             send_fail('Error sending {0}. computeSimscore.py error: {1}.'.format(filename, err), ses_conn)    
           
-print 'done'
+    return rs
 
 # <codecell>
 
-import pprint
-pp = pprint.PrettyPrinter(indent=4)
-pp.pprint(jsonSimscore)
-
-# <headingcell level=1>
-
-# Scratch
-
-# <codecell>
-
-#Add some fake SNS messages to the queue
-sns_conn = boto.connect_sns(aws_ak, aws_sk)
-for i in range(5):
-    sns_conn.publish('arn:aws:sns:us-east-1:409355352037:test','edge6/2012/11/05.19.16.31.340.3.txt',subject='EdgeData')
-
-# <codecell>
-
-'''
-sqs_conn = boto.connect_s3(aws_ak, aws_sk)
-bucket = sqs_conn.get_bucket('incoming-simscore-org')
-
-filename = 'edge7/2012/12/07.15.42.40.109.3.txt'
-data, meta = myS3.getData(bucket, filename, labeled=True)
-#Compute Summary Metrics
-jsonSimscore = vm.summary_metrics(meta, data, sqs_conn)
-#Compute additional data validity metrics
-jsonSimscore = vm.data_metrics_append(jsonSimscore, data, filename)
-#Compute machine health metrics
-jsonSimscore = vm.machine_health_append(jsonSimscore, meta, data)
-jsonSimscore = vm.round_dict(jsonSimscore,3)
-
-pp = pprint.PrettyPrinter(indent=4)
-print json.dumps(jsonSimscore)
-'''
+if __name__ == "__main__":
+    # Open up log file to write pycurl info to
+    #log = open (os.getcwd()+'\\ComputeFails.log', 'a')
+    log = open ('/home/ubuntu/logs/ComputeFails.log', 'a')
+    logit(log,'{0}\n{1}\n{2}\n{0}\n'.format('*'*26,datetime.now(),'Booting up computeSimscore.py'))
+    
+    '''Run Eternally'''
+    rs = True
+    while rs: #replace with while True to run eternally
+        rs = main()
+        
 

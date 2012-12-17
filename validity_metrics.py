@@ -5,7 +5,7 @@
 
 from computing_imports import *
 import numpy as np
-import json, string
+import json, string, re
 import time, datetime
 import report.validate as validate
 import pprint
@@ -101,14 +101,14 @@ def summary_metrics(meta,data,conn):
     jsonSimscore['ProctorValuesCheck'] = m
     
     #UploadDate    String    Upload Date
-    xx = str(meta['DataFileNameOnEdge']).split('\\')[3].split('.')[:6]
-    jsonSimscore['UploadDate'] = '-'.join(xx[:3])+' '+':'.join(xx[3:])
+    xx = re.findall(r'[0-9]+', str(meta['DataFileNameOnS3']))
+    jsonSimscore['UploadDate'] = '-'.join(xx[1:4])+' '+':'.join(xx[4:7])
     
     #UploadDateUnix    Time    Date converted into Unix Epoch C Time for fast sorting.
-    filename = str(meta['DataFileNameOnEdge']).split('\\')[3].split('.')
-    edgetime = '.'.join(filename[:6])
+    filename = re.findall(r'[0-9]+', str(meta['DataFileNameOnS3']))
+    edgetime = '.'.join(filename[1:7])
     jsonSimscore['UploadDateUnix'] = int(time.mktime(time.strptime(edgetime, '%Y.%m.%d.%H.%M.%S'))) 
-
+    
     #continuous	Boolean	Check for any temporal discontinuities 
     check = ok
     for x in np.diff(np.diff(data['%Time_V1']) ):
@@ -133,11 +133,17 @@ def summary_metrics(meta,data,conn):
 # <codecell>
 
 from fetch.configuration import isClipTask
-
+def nan_replace(d):
+    pass
+                
+                
 def data_metrics_append(jsonSimscore, data, filename):
+    minmax = validate.findMinMax(data)
+    #minmax = nan_replace(minmax)
+    
     jsonSimscore.update({
         #Max	Float	Min	Float                 
-         'MinMax' : validate.findMinMax(data)
+         'MinMax' : minmax
         #Dead	Boolean	
         ,'DeadSensors' : validate.findDeadSensor(validate.findMinMax(data), isClipTask(filename))
         #Out of Range	Boolean

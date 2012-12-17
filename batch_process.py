@@ -49,10 +49,21 @@ if mySQS.approx_total_messages(comq)==0:
     conn = boto.connect_s3(aws_ak, aws_sk)
     bucket = conn.get_bucket('incoming-simscore-org')
     
-    filelist = myS3.getFilesBetween(mindate=datetime.now()-timedelta(days=1), maxdate=datetime.now(), bucket=bucket, onlyTxtFiles=True)
+    t0 = datetime.now()-timedelta(days=30)
+    #filelist = myS3.getFilesBetween(mindate=t0, maxdate=datetime.now(), bucket=bucket, onlyTxtFiles=True)
+    filelist =  ['edge3/2012/12/05.15.43.58.109.3.txt']
     print filelist
     
     if len(filelist) > 0:
         mySQS.append_list_to_queue(filelist, comq)
      
+
+# <codecell>
+
+comq.clear()
+
+# <codecell>
+
+
+
 

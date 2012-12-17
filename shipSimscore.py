@@ -115,15 +115,20 @@ def main(c):
                 d = q.delete_message(rs)
                 if d: logit(log,'Messsage deleted from queue\n')
                 break
+            elif http_response == 419:
+                logit(log,'Local error, HTTP: {0}. Invalid value in json: {1}\n{2}\n'.format(http_response, jsonSimscore['TestID'], out.getvalue()))
+                d = q.delete_message(rs)
+                if d: logit(log,'Messsage deleted from queue\n')
+                break    
                 
             #else if error related to content of post, how post is made, 
             else:
-                rs.change_visibility(120) #if having local trouble with it, make invisible for 2 min
+                rs.change_visibility(300) #if having local trouble with it, make invisible for 2 min
                 #log&report error and filename
                 logit(log, 'Local error, HTTP: '+str(http_response)+'\n'+out.getvalue()+'\nSending email...\n')
                 
                 #email me
-                failmessage = 'Error sending '+jsonSimscore['TestID']+'\n'+'shipSimscore error: %d\n\n%s'%(http_response,out.getvalue())
+                failmessage = 'Error sending '+jsonSimscore['TestID']+'\n'+'shipSimscore error: %d\n%s\n'%(http_response,out.getvalue())
                 send_fail(failmessage, ses_conn)
                 break
 

@@ -65,7 +65,7 @@ def main():
     
     #if there's a file in the queue,
     if rs:
-        '''Compute all metrics'''
+        '''Compute all metrics and send'''
         try:
             #Pull filename from S3
             filename = mySQS.get_sqs_filename(rs) #'edge6/2012/11/05.18.46.23.340.0.txt'
@@ -84,16 +84,8 @@ def main():
             jsonSimscore = vm.round_dict(jsonSimscore,3)
             logit(log,'Successfully processed.\n'); print 'Successfully processed.'
             
-        except Exception as err:
-            #make more invisible, print/log exception, email me, then continue
-            #rs.change_visibility(5*60)
-            logit(log,'ERROR: %s - %s\n'%(filename, str(err)) )
-            if filename == None: filename = 'Unknown'
-            send_fail('Error computing {0}. computeSimscore.py error: {1}.'.format(filename, err), ses_conn)
-            raise #remove, replace with continue
             
-        '''Add to queue for shipSimscore'''
-        try:
+            '''Add to queue for shipSimscore'''
             receipt = mySQS.append_to_queue(jsonSimscore, shipq, raw=False)
             assert receipt, "Could not write to queue"    
             #If json is DEFINITELY received by new SQS, delete from original Files2Process queue
@@ -107,9 +99,12 @@ def main():
             logit(log, "Updated SimpleDB\n")
             
         except Exception as err:
+            #make more invisible, print/log exception, email me, then continue
             rs.change_visibility(5*60)
-            logit(log, 'ERROR: %s\n'%str(err) )
-            send_fail('Error sending {0}. computeSimscore.py error: {1}.'.format(filename, err), ses_conn)    
+            if filename == None: filename = 'Unknown'
+            logit(log,'ERROR: %s - %s\n'%(filename, str(err)) )
+            send_fail('Error computing {0}. computeSimscore.py error: {1}.'.format(filename, err), ses_conn)
+            #raise
           
     return rs
 

@@ -153,9 +153,9 @@ def download_codebook(date):
 
 def score_test(data, meta):
     if meta["IsPracticeTest"] == True:
-        return None
+        return 'None'
     else:
-        return None
+        return 'None'
 
 # <codecell>
 

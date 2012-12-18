@@ -18,10 +18,13 @@ from boto.sqs.message import Message
 
 # <codecell>
 
-filename = 'edge4/2012/11/29.00.15.18.109.0.txt'
+filename = 'edge5/2012/12/18.15.52.28.366.0.txt'
 conn = boto.connect_s3(aws_ak, aws_sk)
 bucket = conn.get_bucket('incoming-simscore-org')
 data, meta = myS3.getData(bucket, filename, labeled=True)
+
+# <codecell>
+
 
 # <codecell>
 
@@ -32,8 +35,5 @@ validate.findNans(data, isClipTask(filename))
 
 # <codecell>
 
-print type(data['Fg_R'][0])
-
-# <codecell>
-
+edge5/2012/12/18.15.52.28.366.0
 

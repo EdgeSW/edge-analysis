@@ -135,7 +135,7 @@ def dataParse(f, names, labeled):
         
         return data
     except Exception as e:
-        raise e
+        raise e #return e instead to log?
     
 def cleanRaw(bKey):
     '''Removes header, cleans each line of extra whitespace'''

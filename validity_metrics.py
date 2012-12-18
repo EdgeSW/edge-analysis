@@ -37,7 +37,33 @@ Will only round floats that are values of keys, not contained in lists/tuples.''
             d[key] = round_dict(v, decimal)
          
     return d  
-    
+
+def nan_replace(d):
+    '''replace all np.nan with string "NaN" for usage '''
+    if isinstance(d, dict):
+        for k,v in d.iteritems():
+            if type(v) not in [list, dict, tuple]: 
+                try: d[k] = 'NaN' if np.isnan(v) else v
+                except: d[k] = v
+            else: d[k] = nan_replace(v)
+    elif isinstance(d, list):
+        for i in range(len(d)):
+            if type(d[i]) not in [list, dict, tuple]:  
+                try: d[i] = 'NaN' if np.isnan(d[i]) else d[i]
+                except: d[i] = d[i] #need this?
+            else: d[i] = nan_replace(d[i])
+    elif isinstance(d, tuple):
+        copy = ()
+        for item in d:
+            if type(item) not in [list, dict,tuple]: 
+                try: copy = copy + ('NaN',) if np.isnan(item) else copy +(item,)
+                except: copy = copy + (item,)
+            else: copy = copy + (nan_replace(item),) 
+        d = copy
+            
+    return d
+
+
 def start_v_end(*args):
     '''returns tuple of start-end values for each array given to function,
 returns float if one array provided'''
@@ -132,25 +158,21 @@ def summary_metrics(meta,data,conn):
 
 # <codecell>
 
-from fetch.configuration import isClipTask
-def nan_replace(d):
-    pass
-                
+from fetch.configuration import isClipTask   
                 
 def data_metrics_append(jsonSimscore, data, filename):
-    minmax = validate.findMinMax(data)
-    #minmax = nan_replace(minmax)
     
     jsonSimscore.update({
         #Max	Float	Min	Float                 
-         'MinMax' : minmax
+         'MinMax' : nan_replace(validate.findMinMax(data))
         #Dead	Boolean	
         ,'DeadSensors' : validate.findDeadSensor(validate.findMinMax(data), isClipTask(filename))
         #Out of Range	Boolean
         ,'OutOfRange' : validate.findOutOfRange(validate.findMinMax(data))
         #NaN	Boolean	
-        ,'NaNSensors' : validate.findNans(data, isClipTask(filename))
+        ,'NaNSensors' : validate.findNans(data, isClipTask(filename))  
     })
+
     return jsonSimscore
 
 #jsonSimscore = data_metrics_append(jsonSimscore, data, filename)

@@ -101,7 +101,7 @@ def main(c):
                 
                 #delete message from queue.
                 d = q.delete_message(rs)
-                if d: logit(log,'Messsage deleted from queue\n')
+                if d: logit(log,'Deleted from queue\n')
                 break
                 
             #else if no response, don't receive 200, simscore down, etc:
@@ -113,12 +113,12 @@ def main(c):
             elif http_response == 409:
                 logit(log,'Local error, HTTP: {0}. Attempted to send duplicate test {1}\n'.format(http_response, jsonSimscore['TestID']))
                 d = q.delete_message(rs)
-                if d: logit(log,'Messsage deleted from queue\n')
+                if d: logit(log,'Deleted from queue\n')
                 break
             elif http_response == 419:
                 logit(log,'Local error, HTTP: {0}. Invalid value in json: {1}\n{2}\n'.format(http_response, jsonSimscore['TestID'], out.getvalue()))
                 d = q.delete_message(rs)
-                if d: logit(log,'Messsage deleted from queue\n')
+                if d: logit(log,'Deleted from queue\n')
                 break    
                 
             #else if error related to content of post, how post is made, 

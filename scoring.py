@@ -19,7 +19,7 @@ def load_pickle(filepath, ftype='r'):
 def save_pickle(content, filepath, ftype='w'):
     
     f = open(filepath, ftype)
-    xx = pickle.dump(content, filepath)
+    xx = pickle.dump(content, f)
     f.close()
     return xx
 

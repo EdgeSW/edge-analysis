@@ -7,6 +7,8 @@ import boto
 from aws import aws_ak, aws_sk
 
 edges = ['edge0/', 'edge1/', 'edge10/', 'edge11/', 'edge12/', 'edge2/', 'edge3/', 'edge4/', 'edge5/', 'edge6/', 'edge7/', 'edge8/', 'edge9/']
+#edges = ['edge10/', 'edge11/', 'edge12/', 'edge2/', 'edge3/', 'edge4/', 'edge5/', 'edge6/', 'edge7/', 'edge8/', 'edge9/']
+
 
 
 def getRawData(bucket=None, filename=None, labeled=False):
@@ -18,8 +20,8 @@ def getRawData(bucket=None, filename=None, labeled=False):
     txt, header = cleanRaw(bKey)
     return dataParse(txt, header, labeled)
     
-def getMetaData(bucket=None, filename=None):  
-    '''Returns the metadata .log file associated with a .txt raw data file'''
+def getMetaData(filename=None, bucket=None):  
+    '''Returns metadata .log file. Can provide .txt raw data file and get corresponding .log'''
     if bucket == None: bucket = getBucketConn()
     if filename[-3:] == 'txt': filename = filename[:-3]+'log'
     
@@ -32,7 +34,7 @@ def getData(bucket=None, filename=None, labeled=False):
     returned with an associated dtype or not (see dataParse below)'''
     assert bucket, 'Please provide a bucket or S3 connection instance'
     data = getRawData(bucket, filename, labeled)
-    meta = getMetaData(bucket, filename)
+    meta = getMetaData(filename, bucket)
     return data, meta
 
 def getFilesBetween(mindate=None, maxdate=datetime.now(), bucket=None, onlyTxtFiles=False): #edit to take in conn and bucketname for consistency?
@@ -45,21 +47,33 @@ def getFilesBetween(mindate=None, maxdate=datetime.now(), bucket=None, onlyTxtFi
     for edge in edges:  #edges imported above
         for year in dates_in_range.keys():
             for month in dates_in_range[year]:
-                rs = bucket.list(prefix= ''.join([edge,str(year),'/',str(month)]) )
+                rs = bucket.list(prefix= ''.join([edge,str(year),'/', "%02d"%month]) )
                 
                 for k in rs:
                     if onlyTxtFiles and str(k.name)[-3:]=='log': continue
-                    if isBetweenDates(mindate,maxdate,str(k.name)): files.append(str(k.name)) 
+                    try: 
+                        if isBetweenDates(mindate,maxdate,str(k.name)): files.append(str(k.name)) 
+                    except IndexError: pass
     #files is a list of strings                
     return files
-    
-def getDataBetween(mindate=None, maxdate=datetime.now(), bucket=None, labeled=False, includeMeta=True, includePractice=True):
-    '''Returns data between two dates as dict, can include meta data if you want.
-    Basically a glorified wrapper for getDataFromTxtFileList'''
-    if bucket == None: bucket = getBucketConn()
-    files = getFilesBetween(mindate, maxdate, bucket, onlyTxtFiles=True)
-    return getDataFromTxtFileList(bucket, files, labeled, includeMeta, includePractice)
 
+def getTestFiles(filelist=None, bucket=None, getPractice=False):
+    '''pull a list of EDGE files that were "Tests" instead of "Practices". Can 
+    also perform the inverse. If you want all files, use getFilesBetween'''
+    output = []
+    for f in filelist:
+        meta = getMetaData(f, bucket)
+        if meta["IsPracticeTest"] == False and not getPractice:
+            output.append(f)
+        elif meta["IsPracticeTest"] == True and getPractice:
+            output.append(f)
+    return output
+    
+def getTestFilesBetween(mindate=None, maxdate=datetime.now(), bucket=None, getPractice=False):
+    '''wrapper for getTestFiles'''
+    filelist = getFilesBetween(mindate, maxdate, bucket, onlyTxtFiles=True)
+    return getTestFiles(filelist, bucket, getPractice)
+    
 def getDataFromTxtFileList(bucket=None, files=None, labeled=False, includeMeta=True, includePractice=True):
     '''Given a list of .txt files on S3, will return data associated with each file in that list.
     MUST be given only list of .txt files. If you want only meta data, use getMetaDataBetween()
@@ -68,23 +82,30 @@ def getDataFromTxtFileList(bucket=None, files=None, labeled=False, includeMeta=T
     allData = {}
     for f in files:
         if not includePractice: 
-            metadata = getMetaData(bucket, f); 
+            metadata = getMetaData(f, bucket); 
             m = metadata['IsPracticeTest']
         else: m = False
         
-        if includeMeta and not m: allData[f] = {'meta': metadata if not includePractice else getMetaData(bucket, f), 'data': getRawData(bucket, f, labeled)}
+        if includeMeta and not m: allData[f] = {'meta': metadata if not includePractice else getMetaData(f, bucket), 'data': getRawData(bucket, f, labeled)}
         elif not m: allData[f] = getRawData(bucket, f, labeled) 
         
         
     return allData   
 
+def getDataBetween(mindate=None, maxdate=datetime.now(), bucket=None, labeled=False, includeMeta=True, includePractice=True):
+    '''Returns data between two dates as dict, can include meta data if you want.
+    Basically a glorified wrapper for getDataFromTxtFileList'''
+    if bucket == None: bucket = getBucketConn()
+    files = getFilesBetween(mindate, maxdate, bucket, onlyTxtFiles=True)
+    return getDataFromTxtFileList(bucket, files, labeled, includeMeta, includePractice)
+    
 def getMetaDataBetween(mindate=None, maxdate=None, bucket=None):
     '''Go get only meta data between 2 dates'''
     if bucket == None: bucket = getBucketConn()
     meta = {}
     files = getFilesBetween(mindate, maxdate, bucket, onlyTxtFiles=False)
     for f in files:
-        if f[-3:]=='log': meta[f] = getMetaData(bucket, f)
+        if f[-3:]=='log': meta[f] = getMetaData(f, bucket)
     return meta  
 
 def getLeftBehind(daysback, conn=None, sdb_domain=None):
@@ -106,6 +127,7 @@ def getFileDateFromKey(keyName):
 
 def isBetweenDates(mindate, maxdate, keyname):
     '''example keyname: 'edge10/2012/12/04.15.32.07.109.0.txt' '''
+    #print keyname
     thisdate = getFileDateFromKey(keyname)
     return (thisdate >= mindate and thisdate <= maxdate)
 
@@ -113,7 +135,7 @@ def datesInRange(mind,maxd):
     '''returns dict of years and the months that are between
     the minimum date (mind) and max date (maxd) '''
     dates = {}
-    for year in range(mind.year,maxd.year+1):
+    for year in range(mind.year, maxd.year+1):
         if year == mind.year:
             dates[year] = range(mind.month, (maxd.month if year==maxd.year else 12) +1)
         elif year > mind.year and year < maxd.year:

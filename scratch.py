@@ -1,46 +1,6 @@
 # -*- coding: utf-8 -*-
 # <nbformat>3.0</nbformat>
 
-# <codecell>
-
-import boto
-sys.path.append('C:\\Users\\Tyler\\.ipython\\Simscore-Computing')
-import fetch.myS3 as myS3
-from aws import aws_ak, aws_sk
-from datetime import datetime
-import json
-import cStringIO
-
-
-bucketname='incoming-simscore-org'
-minfilename = 'edge6/2012/12/05.21.59.05.325.0.txt'
-mindate = myS3.getFileDateFromKey(minfilename)
-maxdate = datetime.now()
-
-conn = boto.connect_s3(aws_ak, aws_sk)
-bucket = conn.get_bucket(bucketname)
-        
-start = datetime.now()
-
-
-meta = myS3.getMetaDataBetween(mindate, maxdate, bucket)
-
-# <codecell>
-
-v = meta[meta.keys()[0]]
-print type(v['IsPracticeTest'])
-isPractice = lambda v: v['IsPracticeTest']
-
-end = datetime.now()-start
-print end
-
-# <codecell>
-
-#Add some fake SNS messages to the queue
-sns_conn = boto.connect_sns(aws_ak, aws_sk)
-for i in range(5):
-    sns_conn.publish('arn:aws:sns:us-east-1:409355352037:test','edge6/2012/11/05.19.16.31.340.3.txt',subject='EdgeData')
-
 # <headingcell level=1>
 
 # SQS 

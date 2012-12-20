@@ -79,7 +79,7 @@ def summary_metrics(meta,data,conn):
         #TestID    Int    The uniquely generated ID for this test score to associate all other data with.
         'TestID' : meta['DataFileNameOnS3'][:-4] 
         #TaskType    String    Task Type.
-        ,'TaskType' : meta['TaskId']
+        ,'TaskType' : int(meta['DataFileNameOnS3'].split('.')[-2])
         #IsPractice    Boolean    Is this a scored test?
         ,'IsPractice' : meta["IsPracticeTest"]
         #MetadataFilename    String    Metadata Filename and location in S3.
@@ -113,18 +113,20 @@ def summary_metrics(meta,data,conn):
 
     #ProctorValues
     tasks = ['PegTransfer','Cutting','Suture','ClipApply']
-    try: TaskType = tasks[meta["TaskId"]]
+    try: TaskType = tasks[jsonSimscore['TaskType']]
     except: TaskType = 'Unknown'
     jsonSimscore['ProctorValues'] = meta.get('Proctor'+TaskType,'Unknown')
     
     #proctor	Boolean	Sanity check on proctor field values
     fields = ["NumberDropped", "DistanceFromTargetDot","DistanceFromTargetDotLeft","DistanceFromTargetDotRight","NumberOfTimesOutsideTheLine"]
     m = ok
-    for field in fields:
-        val = meta['Proctor'+TaskType].get(field, 0)
-        if not isinstance(val, int) or val< 0 or val > 25:
-            m = bad
-    jsonSimscore['ProctorValuesCheck'] = m
+    if TaskType != 'Unknown':
+        for field in fields:
+            val = meta['Proctor'+TaskType].get(field, 0)
+            if not isinstance(val, int) or val< 0 or val > 25:
+                m = bad
+        jsonSimscore['ProctorValuesCheck'] = m
+    else: jsonSimscore['ProctorValuesCheck'] = 'Unknown'
     
     #UploadDate    String    Upload Date
     xx = re.findall(r'[0-9]+', str(meta['DataFileNameOnS3']))

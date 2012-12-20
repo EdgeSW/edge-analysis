@@ -89,7 +89,7 @@ def summary_metrics(meta,data,conn):
         #VideoDataFilename    String    Video Data Filename and location in S3.
         ,'VideoDataFilename' : meta["VideoFileNameOnS3"]
         #UserID    String    User ID.
-        ,'UserID' : str(meta['UserId'])
+        ,'UserID' : meta['DataFileNameOnS3'].split('.')[-3] if int(meta['UserId']) == 0 else str(meta['UserId']) 
         #ProctorID    String    Proctor ID.
         ,'ProctorID' : str(meta["ProctorId"])
         #EdgeID    String    EDGE ID.
@@ -204,7 +204,7 @@ def machine_health_append(jsonSimscore, meta, data):
     jsonSimscore['ToolTipDrift'] = {'left':vall, 'right':valr}
     
     #	LinEncDrift	Boolean	Is there linear encoder drift?
-    jsonSimscore['LinEncDrift'] = {'left': bad if abs(start_v_end(data['Lin_L'])) > 1 else ok, 'right': bad if abs(start_v_end(data['Lin_R'])) > 1 else ok}
+    jsonSimscore['LinEncDrift'] = {'left': bad if abs(start_v_end(data['Lin_L'])) > 2 else ok, 'right': bad if abs(start_v_end(data['Lin_R'])) > 2 else ok}
     #	LinEncDriftValue	Float	Offset from start and finish linear encoder point
     jsonSimscore['LinEncDriftValue'] = {'left': start_v_end(data['Lin_L']), 'right': start_v_end(data['Lin_R'])}
     #	InvalidToolID	Boolean	Check that tool IDs exist in database

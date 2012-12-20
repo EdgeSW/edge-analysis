@@ -18,20 +18,23 @@ from boto.sqs.message import Message
 
 # <codecell>
 
-filename = 'edge8/2012/12/07.20.57.25.358.1.txt'
+b = 'edge11/2012/12/20.03.09.33.109.1.txt' #right rot w/o index
+g = 'edge11/2012/12/20.03.12.47.109.1.txt' #rignt rot with index
 
 conn = boto.connect_s3(aws_ak, aws_sk)
-bucket = conn.get_bucket('incoming-simscore-org')
-data, meta = myS3.getData(bucket, filename, labeled=True)
+bucket = conn.get_bucket('incoming-simscore-org-test')
+data, meta = myS3.getData(bucket, b, labeled=True)
 
 # <codecell>
 
-for a in np.diff(data['Rot_L']):
+for a in np.diff(data['Rot_R']):
     if a > 1000: print a
 
 # <codecell>
 
-data['Rot_L'][:3000]+offset
+offset =  309237643.8/2
+print round(offset)
+#data['Rot_L'][:3000]+offset
 
 # <codecell>
 
@@ -46,6 +49,26 @@ print offset
 
 import matplotlib
 plot(data['Rot_L'][30:3000]+offset)
+
+# <codecell>
+
+
+# <codecell>
+
+conn = boto.connect_s3(aws_ak, aws_sk)
+bucket = conn.get_bucket('incoming-simscore-org')
+filename = 'edge0/2012/07/21.07.05.31.109.0.txt'
+data, meta = myS3.getData(bucket, filename, labeled=True)
+
+jsonSimscore = vm.summary_metrics(meta, data, conn)
+jsonSimscore = vm.data_metrics_append(jsonSimscore, data, filename)
+jsonSimscore = vm.machine_health_append(jsonSimscore, meta, data)
+#Score data
+jsonSimscore.update({'Score': scoring.score_test(data, meta)} )
+jsonSimscore = vm.nan_replace(jsonSimscore)
+
+#Processing is completed --Add this jsonSimscore to new SQS stack for POST
+jsonSimscore = vm.round_dict(jsonSimscore,3)
 
 # <codecell>
 

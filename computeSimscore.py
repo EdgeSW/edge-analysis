@@ -78,10 +78,11 @@ def main():
             jsonSimscore = vm.data_metrics_append(jsonSimscore, data, filename)
             jsonSimscore = vm.machine_health_append(jsonSimscore, meta, data)
             #Score data
-            jsonSimscore.update({'Score': scoring.score_test(data, meta)} )
+            jsonSimscore.update({'Score': 'None'}) #scoring.score_test(data, meta)} )
             
             #Processing is completed --Add this jsonSimscore to new SQS stack for POST
             jsonSimscore = vm.round_dict(jsonSimscore,3)
+            jsonSimscore = vm.nan_replace(jsonSimscore)
             logit(log,'Successfully processed.\n'); print 'Successfully processed.'
             
             

@@ -18,7 +18,7 @@ from aws import aws_ak, aws_sk
 
 conn = boto.connect_s3(aws_ak, aws_sk)
 bucket = conn.get_bucket('incoming-simscore-org')
-allfiles = myS3.getFilesBetween(mindate=datetime.now()-timedelta(days=170), maxdate=datetime.now()-timedelta(days=79), bucket=bucket, onlyTxtFiles=True)
+allfiles = myS3.getFilesBetween(mindate=datetime.now()-timedelta(days=6), maxdate=datetime.now(), bucket=bucket, onlyTxtFiles=True)
 
 # <codecell>
 
@@ -29,9 +29,6 @@ for f in allfiles:
         userfiles.append(f)
         
 ffs = myS3.getTestFiles(userfiles, bucket) 
-
-# <codecell>
-
 print ffs
 
 # <codecell>
@@ -73,7 +70,7 @@ pprint.pprint(report)
 %load_ext autoreload
 %autoreload
 
-import openpyxl, json
+import json
 from openpyxl.workbook import Workbook
 from openpyxl.writer.excel import ExcelWriter
 
@@ -116,8 +113,4 @@ for k in report.keys():
 
 # <codecell>
 
-for col_idx in xrange(1, 40):
-    col = get_column_letter(col_idx)
-    for row in xrange(1, 600):
-        ws.cell('%s%s'%(col, row)).value = '%s%s' % (col, row)
 

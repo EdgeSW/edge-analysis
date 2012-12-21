@@ -12,63 +12,51 @@ import numpy as np
 import scoring
 import fetch.myS3 as myS3
 import fetch.mySQS as mySQS
+import scrub
 import validity_metrics as vm
 from aws import aws_ak, aws_sk
 from boto.sqs.message import Message
 
 # <codecell>
 
-b = 'edge11/2012/12/20.03.09.33.109.1.txt' #right rot w/o index
-g = 'edge11/2012/12/20.03.12.47.109.1.txt' #rignt rot with index
-
-conn = boto.connect_s3(aws_ak, aws_sk)
-bucket = conn.get_bucket('incoming-simscore-org-test')
-data, meta = myS3.getData(bucket, b, labeled=True)
-
-# <codecell>
-
-for a in np.diff(data['Rot_R']):
-    if a > 1000: print a
-
-# <codecell>
-
-offset =  309237643.8/2
-print round(offset)
-#data['Rot_L'][:3000]+offset
-
-# <codecell>
-
-offset = int(309237644.304/2)
-print data['Rot_L'][0] - offset
-
-# <codecell>
-
-print offset
-
-# <codecell>
-
-import matplotlib
-plot(data['Rot_L'][30:3000]+offset)
-
-# <codecell>
-
-
-# <codecell>
-
+'''
 conn = boto.connect_s3(aws_ak, aws_sk)
 bucket = conn.get_bucket('incoming-simscore-org')
-filename = 'edge0/2012/07/21.07.05.31.109.0.txt'
+filename = 'edge1/2012/12/12.21.16.43.362.0.txt'
 data, meta = myS3.getData(bucket, filename, labeled=True)
+scoring.save_pickle(data, 'data.txt')
+'''
+data = scoring.load_pickle('C:\\Users\\Tyler\\data.txt')
 
-jsonSimscore = vm.summary_metrics(meta, data, conn)
-jsonSimscore = vm.data_metrics_append(jsonSimscore, data, filename)
-jsonSimscore = vm.machine_health_append(jsonSimscore, meta, data)
-#Score data
-jsonSimscore.update({'Score': scoring.score_test(data, meta)} )
-jsonSimscore = vm.nan_replace(jsonSimscore)
+# <codecell>
 
-#Processing is completed --Add this jsonSimscore to new SQS stack for POST
-jsonSimscore = vm.round_dict(jsonSimscore,3)
+import numpy as np
+import matplotlib.pyplot as plt
+import time
+
+plt.ion()
+
+i=0
+
+fig = plt.figure()
+ax = fig.add_subplot(111)
+line1, = ax.plot(-data['ThG_R'][i:i+600],  data['Fg_R'][i:i+600], '.') # Returns a tuple of line objects, thus the comma
+ax.set_title('Time: %d sec'%i)
+for i in range(i,len(data['Fg_R']),5):
+    line1.set_ydata(data['Fg_R'][i:i+600])
+    line1.set_xdata(-data['ThG_R'][i:i+600])
+    if i == 0: i = 1
+    ax.set_title('Time: %.1f sec'%(i/30.0) )
+    fig.canvas.draw()
+    #time.sleep(.08)
+
+# <codecell>
+
+data['%Time_V1'][-1]
+
+# <codecell>
+
+len(range(i,len(data['Fg_R']),5))
 
 # <codecell>
 

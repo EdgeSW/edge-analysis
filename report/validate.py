@@ -18,6 +18,9 @@ def findDeadSensor(minmax, isClipTask):
     results = []
     
     for k, v in minmax.iteritems():
+        #appended 1/2/13 because left graspers not always closed during CA task
+        if k == 'Fg_L' and isClipTask and (abs(v['max'] - v['min']) < 0.0001): continue
+        
         if not isClipTask:
             if  (abs(v['max'] - v['min']) < 0.0001):
                 results.append(k)

@@ -7,7 +7,7 @@ import numpy as np
 
 # <codecell>
 
-def fix_offset(npdata, offset=1e8):    
+def fixOffset(npdata, offset=1e8):    
     '''cleans up data with large, instantaneous offsets (intended for Rot)'''
     ndata = np.copy(npdata -npdata[0])
     diffs = np.diff(ndata)
@@ -20,4 +20,6 @@ def fix_offset(npdata, offset=1e8):
 
 # <codecell>
 
+def arcLength(d, th):
+    '''d = 1xn data to 
 

@@ -43,13 +43,13 @@ def add_file_sdb(domain, meta):
 #connect to S3
 conn = boto.connect_s3(aws_ak, aws_sk)
 bucket = conn.get_bucket('incoming-simscore-org')
+
 #Connect to sqs
 sqs_conn = boto.connect_sqs(aws_ak, aws_sk)
 q = sqs_conn.get_queue('EdgeFiles2Process')
 q.set_message_class(boto.sqs.message.RawMessage)
 shipq = sqs_conn.get_queue('Files2Ship')
-#Connect to ses
-ses_conn = boto.connect_ses(aws_ak, aws_sk)
+
 #Connect to SimpleDB
 sdb_conn = boto.connect_sdb(aws_ak, aws_sk)
 sdb_domain = sdb_conn.get_domain('ProcessedEdgeFiles')
@@ -104,6 +104,8 @@ def main():
             rs.change_visibility(5*60)
             if filename == None: filename = 'Unknown'
             logit(log,'ERROR: %s - %s\n'%(filename, str(err)) )
+            #Connect to ses
+            ses_conn = boto.connect_ses(aws_ak, aws_sk)
             send_fail('Error computing {0}. computeSimscore.py error: {1}.'.format(filename, err), ses_conn)
             #raise
           
@@ -119,7 +121,8 @@ if __name__ == "__main__":
     
     '''Run Eternally'''
     rs = True
-    while rs: #replace with while True to run eternally
+    #while rs: #replace with while True to run eternally
+    while True:
         rs = main()
         
 

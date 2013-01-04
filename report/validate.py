@@ -19,13 +19,13 @@ def findDeadSensor(minmax, isClipTask):
     
     for k, v in minmax.iteritems():
         #appended 1/2/13 because left graspers not always closed during CA task
-        if k == 'Fg_L' and isClipTask and (abs(v['max'] - v['min']) < 0.0001): continue
+        if k == 'Fg_L' and isClipTask and (abs(v['max'] - v['min']) < 0.005): continue
         
         if not isClipTask:
-            if  (abs(v['max'] - v['min']) < 0.0001):
+            if  (abs(v['max'] - v['min']) < 0.005):
                 results.append(k)
         else:
-            if  (abs(v['max'] - v['min']) < 0.0001) and k != 'Rot_R' and k != 'ThG_R':
+            if  (abs(v['max'] - v['min']) < 0.005) and k != 'Rot_R' and k != 'ThG_R':
                 results.append(k)
     return results
 
@@ -38,3 +38,5 @@ def findOutOfRange(minmax):
                   (r['max'] is not None and (v['max'] > r['max']))):
             results.append(k)
     return results
+
+

@@ -3,13 +3,15 @@
 
 # <codecell>
 
-from computing_imports import *
 import numpy as np
 import json, string, re
 import time, datetime
 import report.validate as validate
 import pprint
 import boto
+import ast
+import pickle
+import math
 
 # <headingcell level=4>
 

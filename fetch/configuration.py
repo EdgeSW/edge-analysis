@@ -9,21 +9,20 @@ default_kinematics = {
               }             
 
 
-
 ranges = {		
 			'%Time_V1'	: {'min': 0., 'max': None }
 			, 'J1_L'  	: {'min': -10., 'max': 100. }
 			, 'J2_L'  	: {'min': -85., 'max': 45. }
 			, 'Lin_L' 	: {'min': -7., 'max': 10. }
 			, 'Rot_L' 	: {'min': -720., 'max': 720. }
-			, 'ThG_L'	: {'min': -35., 'max': 50. }
-			, 'Fg_L'	: {'min': -0.6, 'max': 125. }
+			, 'ThG_L'	: {'min': -50., 'max': 50. }
+			, 'Fg_L'	: {'min': -0.6, 'max': 150. }
 			, 'J1_R'	: {'min': -10., 'max': 100. }
 			, 'J2_R'	: {'min': -85., 'max': 45. }
 			, 'Lin_R'	: {'min': -7., 'max': 10. }
 			, 'Rot_R'	: {'min': -720., 'max': 720. }
-			, 'ThG_R'	: {'min': -50., 'max': 35. }
-			, 'Fg_R'	: {'min': -0.5, 'max': 125. }
+			, 'ThG_R'	: {'min': -50., 'max': 50. }
+			, 'Fg_R'	: {'min': -0.6, 'max': 150. }
 			, 'X_L'		: {'min': -26., 'max': 26. }
 			, 'Y_L'		: {'min': -17., 'max': 12. }
 			, 'Z_L'		: {'min': -8., 'max': 15. }

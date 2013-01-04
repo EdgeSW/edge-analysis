@@ -55,8 +55,7 @@ def leftBehindCheck(daysback):
 sqs_conn = boto.connect_sqs(aws_ak, aws_sk)
 q = sqs_conn.get_queue('Files2Ship')
 comq = sqs_conn.get_queue('EdgeFiles2Process')
-#Connect to ses
-ses_conn = boto.connect_ses(aws_ak, aws_sk)
+
 #Connect to SimpleDB
 sdb_conn = boto.connect_sdb(aws_ak, aws_sk)
 sdb_domain = sdb_conn.get_domain('ProcessedEdgeFiles')
@@ -84,8 +83,8 @@ def main(c):
         
         '''POSTING Retry Logic'''
         while True:
-            #POST to simscore
-            compute = 'http://dev.simscore.md3productions.com/simscores-v1/machinereport' 
+            #POST to simscore 
+            compute = 'http://simscore.org/simscores-v1/machinereport' #'http://dev.simscore.md3productions.com/simscores-v1/macinereport'
             pp = sim.RESTfields(address=compute, header=['Content-Type: application/json'], values=json.dumps(jsonSimscore))
             c, out = pp.posthttp(c)
             http_response = c.getinfo(c.HTTP_CODE)
@@ -129,6 +128,8 @@ def main(c):
                 
                 #email me
                 failmessage = 'Error sending '+jsonSimscore['TestID']+'\n'+'shipSimscore error: %d\n%s\n'%(http_response,out.getvalue())
+                #Connect to ses
+                ses_conn = boto.connect_ses(aws_ak, aws_sk)
                 send_fail(failmessage, ses_conn)
                 break
 
@@ -164,13 +165,14 @@ if __name__ == "__main__":
     logit(log, '{0}\n{1}\n{2}\n{0}\n'.format('*'*26,datetime.now(),'Booting up shipSimscore.py'))
     
     # Login to Simscore
-    login = 'http://dev.simscore.md3productions.com/simscores-v1/user/login'
-    c, buf = sim.loginSimscore(address=login)
+    #login = 'http://dev.simscore.md3productions.com/simscores-v1/user/login'
+    c, buf = sim.loginSimscore()
     logit(log, 'Login response: '+str(c.getinfo(c.HTTP_CODE))+'\n'+buf.getvalue()+'\n')
     
     '''Run Eternally'''
     rs = True
-    while rs: #this is changed to while True when eternal server needed
+    #while rs: #this is changed to while True when eternal server needed
+    while True:
         rs, c = main(c)
         
 

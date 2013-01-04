@@ -36,7 +36,7 @@ if mySQS.approx_total_messages(comq)==0:
     print 'processing'
     conn = boto.connect_s3(aws_ak, aws_sk)
     bucket = conn.get_bucket('incoming-simscore-org')
-    theforgotten = myS3.getLeftBehind(daysback=5, conn=conn, sdb_domain=sdb_domain)
+    theforgotten = myS3.getLeftBehind(daysback=7, conn=conn, sdb_domain=sdb_domain)
     print theforgotten
     
     if len(theforgotten) > 0:
@@ -44,15 +44,16 @@ if mySQS.approx_total_messages(comq)==0:
 
 # <codecell>
 
+comq.clear()
 if mySQS.approx_total_messages(comq)==0:
     print 'processing'
     conn = boto.connect_s3(aws_ak, aws_sk)
     bucket = conn.get_bucket('incoming-simscore-org')
     
-    t0 = datetime.now()-timedelta(days=137)
+    t0 = datetime.now()-timedelta(days=150) #138
     filelist = myS3.getFilesBetween(mindate=t0, maxdate=datetime.now(), bucket=bucket, onlyTxtFiles=True)
     #filelist =  ['edge0/2012/07/21.07.05.31.109.0.txt']
-    print filelist
+    print len(filelist), filelist
     
     if len(filelist) > 0:
         mySQS.append_list_to_queue(filelist, comq)

@@ -69,12 +69,11 @@ def main():
         try:
             #Pull filename from S3
             filename = mySQS.get_sqs_filename(rs) #'edge6/2012/11/05.18.46.23.340.0.txt'
-            data, meta = myS3.getData(bucket, filename, labeled=True)
-            if data == None:
-                d = q.delete_message(rs)
-                raise ValueError, "Data file is empty!"
             logit(log,'{0}\n{1}\nProcessing {2}\n'.format('-'*20,datetime.now(),filename) )
             
+            data, meta = myS3.getData(bucket, filename, labeled=True)
+            if data == None: raise ValueError, "Data file is empty!"
+                
             '''Where the magic happens'''
             #Compute Summary Metrics
             jsonSimscore = vm.summary_metrics(meta, data, conn)
@@ -113,7 +112,7 @@ def main():
             send_fail('Error computing {0}. computeSimscore.py error: {1}.'.format(filename, err), ses_conn)
             
             #TODO handle incoming-simscore-org-test bucket requests in better way
-            if err.message == "File not found on S3": 
+            if err.message in ["File not found on S3","Data file is empty!"]: 
                 d = q.delete_message(rs)          
     return rs
 
@@ -122,7 +121,8 @@ def main():
 if __name__ == "__main__":
     # Open up log file to write pycurl info to
     #log = open (os.getcwd()+'\\ComputeFails.log', 'a')
-    log = open ('/home/ubuntu/logs/ComputeFails.log', 'a')
+    #log = open ('/home/ubuntu/logs/ComputeFails.log', 'a')
+    log = open ('C:\\Users\\Tyler\\ComputeFails.log', 'a')
     logit(log,'{0}\n{1}\n{2}\n'.format('*'*26,datetime.now(),'Booting up computeSimscore.py'))
     
     '''Run Eternally'''

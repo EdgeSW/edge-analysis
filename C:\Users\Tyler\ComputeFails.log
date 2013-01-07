@@ -1,0 +1,55 @@
+**************************
+2013-01-07 22:46:25.964286
+Booting up computeSimscore.py
+--------------------
+2013-01-07 22:48:17.587850
+Processing edge11/2013/01/07.18.32.15.109.0.txt
+ERROR: edge11/2013/01/07.18.32.15.109.0.txt - File not found on S3
+--------------------
+2013-01-07 22:48:17.912210
+Processing edge11/2013/01/04.21.36.02.109.0.txt
+Successfully processed.
+Deleted from queue
+Updated SimpleDB
+--------------------
+2013-01-07 22:48:32.613506
+Processing edge7/2013/01/07.16.59.48.370.2.txt
+ERROR: edge7/2013/01/07.16.59.48.370.2.txt - Data file is empty!
+--------------------
+2013-01-07 22:51:34.857839
+Processing edge11/2013/01/07.18.32.15.109.0.txt
+ERROR: edge11/2013/01/07.18.32.15.109.0.txt - File not found on S3
+--------------------
+2013-01-07 22:51:35.151873
+Processing edge7/2013/01/07.16.59.48.370.2.txt
+ERROR: edge7/2013/01/07.16.59.48.370.2.txt - Data file is empty!
+--------------------
+2013-01-07 22:51:35.677436
+Processing edge11/2013/01/04.21.36.02.109.0.txt
+Successfully processed.
+Deleted from queue
+Updated SimpleDB
+--------------------
+2013-01-07 22:52:20.878575
+Processing edge11/2013/01/07.18.32.15.109.0.txt
+ERROR: edge11/2013/01/07.18.32.15.109.0.txt - File not found on S3
+--------------------
+2013-01-07 22:52:21.213806
+Processing edge7/2013/01/07.16.59.48.370.2.txt
+ERROR: edge7/2013/01/07.16.59.48.370.2.txt - Data file is empty!
+--------------------
+2013-01-07 22:52:21.704584
+Processing edge11/2013/01/04.21.36.02.109.0.txt
+Successfully processed.
+Deleted from queue
+Updated SimpleDB
+--------------------
+2013-01-07 22:54:41.911606
+Processing edge11/2013/01/07.18.32.15.109.0.txt
+ERROR: edge11/2013/01/07.18.32.15.109.0.txt - File not found on S3
+--------------------
+2013-01-07 22:54:42.228183
+Processing edge11/2013/01/04.21.36.02.109.0.txt
+Successfully processed.
+Deleted from queue
+Updated SimpleDB

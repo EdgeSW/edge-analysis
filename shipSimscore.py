@@ -162,7 +162,7 @@ if __name__ == "__main__":
     # Open up log file to write pycurl info to
     #log = open (os.getcwd()+'\\ShipFails.log', 'a')
     log = open ('/home/ubuntu/logs/ShipFails.log', 'a')
-    logit(log, '{0}\n{1}\n{2}\n{0}\n'.format('*'*26,datetime.now(),'Booting up shipSimscore.py'))
+    logit(log, '{0}\n{1}\n{2}\n'.format('*'*26,datetime.now(),'Booting up shipSimscore.py'))
     
     # Login to Simscore
     #login = 'http://dev.simscore.md3productions.com/simscores-v1/user/login'

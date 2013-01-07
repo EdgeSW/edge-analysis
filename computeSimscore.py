@@ -8,7 +8,7 @@
 # <codecell>
 
 import sys, os
-#sys.path.append('C:\\Users\\Tyler\\.ipython\\Simscore-Computing')
+sys.path.append('C:\\Users\\Tyler\\.ipython\\Simscore-Computing')
 import boto, time, json, pprint
 from datetime import datetime
 import numpy as np
@@ -70,6 +70,9 @@ def main():
             #Pull filename from S3
             filename = mySQS.get_sqs_filename(rs) #'edge6/2012/11/05.18.46.23.340.0.txt'
             data, meta = myS3.getData(bucket, filename, labeled=True)
+            if data == None:
+                d = q.delete_message(rs)
+                raise ValueError, "Data file is empty!"
             logit(log,'{0}\n{1}\nProcessing {2}\n'.format('-'*20,datetime.now(),filename) )
             
             '''Where the magic happens'''
@@ -100,6 +103,7 @@ def main():
             logit(log, "Updated SimpleDB\n")
             
         except Exception as err:
+
             #make more invisible, print/log exception, email me, then continue
             rs.change_visibility(5*60)
             if filename == None: filename = 'Unknown'
@@ -107,8 +111,10 @@ def main():
             #Connect to ses
             ses_conn = boto.connect_ses(aws_ak, aws_sk)
             send_fail('Error computing {0}. computeSimscore.py error: {1}.'.format(filename, err), ses_conn)
-            #raise
-          
+            
+            #TODO handle incoming-simscore-org-test bucket requests in better way
+            if err.message == "File not found on S3": 
+                d = q.delete_message(rs)          
     return rs
 
 # <codecell>
@@ -117,7 +123,7 @@ if __name__ == "__main__":
     # Open up log file to write pycurl info to
     #log = open (os.getcwd()+'\\ComputeFails.log', 'a')
     log = open ('/home/ubuntu/logs/ComputeFails.log', 'a')
-    logit(log,'{0}\n{1}\n{2}\n{0}\n'.format('*'*26,datetime.now(),'Booting up computeSimscore.py'))
+    logit(log,'{0}\n{1}\n{2}\n'.format('*'*26,datetime.now(),'Booting up computeSimscore.py'))
     
     '''Run Eternally'''
     rs = True

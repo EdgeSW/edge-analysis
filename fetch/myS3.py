@@ -16,8 +16,11 @@ def getRawData(bucket=None, filename=None, labeled=False):
     Numpy array of 64bit floats'''
     if bucket == None: bucket = getBucketConn()
     bKey = bucket.get_key(filename)
-    
+    if not bKey: raise ValueError, "File not found on S3"
     txt, header = cleanRaw(bKey)
+    if not txt.tell():  #added 1/7/13 to deal with edge uploads of empty files
+        return None
+        #raise ValueError, "Data file is empty!"
     return dataParse(txt, header, labeled)
     
 def getMetaData(filename=None, bucket=None):  
@@ -152,8 +155,8 @@ def dataParse(f, names, labeled):
     try:
         dt = {'names' : names, 'formats' : formats}
         #comments set to none because defaults to # and #I.IO is Jay's version of NaN
-        if labeled:  data = np.loadtxt(f,  comments='%', skiprows=1, dtype=dt, converters=converterdict)
-        else:  data = np.loadtxt(f,  comments='%', skiprows=1,  converters=converterdict) 
+        if labeled:  data = np.loadtxt(f,  comments='%', skiprows=0, dtype=dt, converters=converterdict)
+        else:  data = np.loadtxt(f,  comments='%', skiprows=0,  converters=converterdict) 
         
         return data
     except Exception as e:

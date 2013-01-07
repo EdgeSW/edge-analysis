@@ -4,7 +4,7 @@
 # <codecell>
 
 import sys, os
-#sys.path.append('C:\\Users\\Tyler\\.ipython\\Simscore-Computing')
+sys.path.append('C:\\Users\\Tyler\\.ipython\\Simscore-Computing')
 import boto, time, json, pprint
 from datetime import datetime, timedelta
 import numpy as np
@@ -44,15 +44,15 @@ if mySQS.approx_total_messages(comq)==0:
 
 # <codecell>
 
-comq.clear()
+
 if mySQS.approx_total_messages(comq)==0:
     print 'processing'
     conn = boto.connect_s3(aws_ak, aws_sk)
     bucket = conn.get_bucket('incoming-simscore-org')
     
     t0 = datetime.now()-timedelta(days=150) #138
-    filelist = myS3.getFilesBetween(mindate=t0, maxdate=datetime.now(), bucket=bucket, onlyTxtFiles=True)
-    #filelist =  ['edge0/2012/07/21.07.05.31.109.0.txt']
+    #filelist = myS3.getFilesBetween(mindate=t0, maxdate=datetime.now(), bucket=bucket, onlyTxtFiles=True)
+    filelist =  ['edge11/2013/01/07.18.32.15.109.0.txt']
     print len(filelist), filelist
     
     if len(filelist) > 0:
@@ -61,6 +61,9 @@ if mySQS.approx_total_messages(comq)==0:
 
 # <codecell>
 
+files = myS3.getLeftBehind(8, conn, sdb_domain)
+print files
 
+# <codecell>
 
 

@@ -32,21 +32,25 @@ Movement below th cut to zero, data should be filtered prior'''
 def fb(data, i, howfar):
     return (data(i+howfar)-data(i-howfar))
 
-def holo(f, h):
+def holo(data, h):
     '''Calculate time derivative according to holoborodko's 11th order method
 http://www.holoborodko.com/pavel/numerical-methods/numerical-derivative/smooth-low-noise-differentiators/
 f = the data to be differentiated
 h = the step size, or change in time, between each sample'''
     
-    df = np.zeros(len(f)) 
+    df = np.zeros(len(data)) 
+    s = 5 #depends on order of holoborodko
     
-    for i in range(len(f)):
+    pad1 = [2*data[0]]*s - data[s:0:-1]
+    pad2 = [2*data[-1]]*s - data[-2:-(s+2):-1]
+    f = np.append(np.append(pad1, data),pad2)
+    
+    for i in range(s, len(f)+s-1):
         #Real 11th order Holoborodko
-        if i >=5 and i <= len(f)-6:
-            df[i] = (322*(f[i+1]-f[i-1])+256*(f[i+2]-f[i-2])+39*(f[i+3]-f[i-3])
-                -32*(f[i+4]-f[i-4])-11*(f[i+5]-f[i-5]) ) / (1536*h)
+        df[i] = (322*(f[i+1]-f[i-1])+256*(f[i+2]-f[i-2])+39*(f[i+3]-f[i-3])
+            -32*(f[i+4]-f[i-4])-11*(f[i+5]-f[i-5]) ) / (1536*h)
             
-        #Deal with head/tail cases
+        '''#Deal with head/tail cases
         elif i == 0: df[i] = (f[i+1]-f[i]) / h
         elif i == len(f)-1: df[i] = (f[i]-f[i-1]) / h 
         elif i == 1 or i == len(f)-2:
@@ -57,7 +61,7 @@ h = the step size, or change in time, between each sample'''
             df[i] = (39*(f[i+1]-f[i-1])+12*(f[i+2]-f[i-2])-5*(f[i+3]-f[i-3])) / (96*h)      
         elif i == 4 or i == len(f)-5:
             df[i] = (27*(f[i+1]-f[i-1])+16*(f[i+2]-f[i-2])-(f[i+3]-f[i-3])-2*(f[i+4]-f[i-4])) / (96*h)
-            
+        '''    
     return df
 
 # <codecell>

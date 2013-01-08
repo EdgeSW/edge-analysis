@@ -44,7 +44,8 @@ if mySQS.approx_total_messages(comq)==0:
 
 # <codecell>
 
-
+comq.clear()
+q.clear()
 if mySQS.approx_total_messages(comq)==0:
     print 'processing'
     conn = boto.connect_s3(aws_ak, aws_sk)
@@ -63,6 +64,10 @@ if mySQS.approx_total_messages(comq)==0:
 
 files = myS3.getLeftBehind(8, conn, sdb_domain)
 print files
+
+# <codecell>
+
+comq.clear()
 
 # <codecell>
 

@@ -71,6 +71,14 @@ def main():
             filename = mySQS.get_sqs_filename(rs) #'edge6/2012/11/05.18.46.23.340.0.txt'
             logit(log,'{0}\n{1}\nProcessing {2}\n'.format('-'*20,datetime.now(),filename) )
             
+            #Ensure this isn't a Reference block trace
+            if 'Trace' in filename: 
+                logit(log,'Is a reference block trace.\n'); 
+                d = q.delete_message(rs)
+                logit(log, 'Deleted from queue\n'); print 'Deleted %s from queue' %filename
+                return rs
+                
+            #If everything looks good, load the dataaa!
             data, meta = myS3.getData(bucket, filename, labeled=True)
             if data == None: raise ValueError, "Data file is empty!"
             

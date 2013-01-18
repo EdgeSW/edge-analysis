@@ -19,6 +19,9 @@ def get_sqs_filename(message):
     '''given a decoded sqs message from SNS, return the Edge filename'''
     
     sqsmessage = json.loads(message.get_body())["Message"]
+    #If it's a reference block trace, spit whole name back. deal with outside def
+    if 'Trace' in sqsmessage: return sqsmessage
+
     temp = sqsmessage.split('.')
     temp[-1] = 'txt'
     return str('.'.join(temp))

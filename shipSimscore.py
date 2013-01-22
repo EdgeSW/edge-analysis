@@ -79,7 +79,7 @@ def main(c):
                 
         #Login if logincookie is expired
         if sim.is_expired_cookie(c):
-            c, buf = sim.loginSimscore(address=login)
+            c, buf = sim.loginSimscore()
         
         '''POSTING Retry Logic'''
         while True:

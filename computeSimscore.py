@@ -141,8 +141,8 @@ def main():
 
 if __name__ == "__main__":
     # Open up log file to write pycurl info to
-    #log = open (os.getcwd()+'\\ComputeFails.log', 'a')
-    log = open ('/home/ubuntu/logs/ComputeFails.log', 'a')
+    log = open (os.getcwd()+'\\ComputeFails.log', 'a')
+    #log = open ('/home/ubuntu/logs/ComputeFails.log', 'a')
     logit(log,'{0}\n{1}\n{2}\n'.format('*'*26,datetime.now(),'Booting up computeSimscore.py'))
     
     '''Run Eternally'''

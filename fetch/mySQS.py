@@ -33,7 +33,8 @@ def get_sqs_bucket(message):
     bucket = sqsmessage.split('Bucket = ')[-1].strip()
     if bucket == "Test": return 'incoming-simscore-org-test'
     elif bucket == "Normal": return 'incoming-simscore-org'
-    else: return str(bucket)
+    #else: return str(bucket)
+    else: return 'incoming-simscore-org'
 	
 def approx_total_messages(q):
 	'''Running this function ~1000x on a queue containing 1 message returned 

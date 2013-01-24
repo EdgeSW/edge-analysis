@@ -98,6 +98,7 @@ def main():
             jsonSimscore = vm.summary_metrics(meta, data, conn)
             jsonSimscore = vm.data_metrics_append(jsonSimscore, data, filename)
             jsonSimscore = vm.machine_health_append(jsonSimscore, meta, data)
+            jsonSimscore['Bucket'] = bucketname
             #Score data
             jsonSimscore.update({'Score': 'None'}) #scoring.score_test(data, meta)} )
             

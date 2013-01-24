@@ -8,7 +8,7 @@
 # <codecell>
 
 import sys, os
-#sys.path.append('C:\\Users\\Tyler\\.ipython\\Simscore-Computing')
+sys.path.append('C:\\Users\\Tyler\\.ipython\\Simscore-Computing')
 import boto, time, json, pprint
 from datetime import datetime
 import numpy as np
@@ -22,28 +22,11 @@ from boto.sqs.message import Message
 
 # <codecell>
 
-def send_fail(failure, conn): 
-    conn.send_email(source='thartley@simulab.com',
-        subject='computeSimscore.py Errors', format='html',
-        body=failure, to_addresses=['thartley@simulab.com'])
-    
-def logit(log, message):
-    log.write(message)
-    log.flush()
-    
-def add_file_sdb(domain, meta):
-    attrs = {'IsProcessed':True, 'IsSent':False, 'UploadDateUnix':meta['UploadDateUnix'], 'UploadDate':meta['UploadDate']
-            ,'Score':meta['Score'], 'FailTypes':json.dumps(meta['FailTypes'])
-            , 'IsPractice':meta['IsPractice'], 'UserID':meta['UserID'], 'RToolID': meta['RToolID'] , 'LToolID': meta['LToolID']}
-    return domain.put_attributes(meta['TestID'],attrs)
-
-# <codecell>
-
 '''Define Connections'''
 #connect to S3
 conn = boto.connect_s3(aws_ak, aws_sk)
-bucket = conn.get_bucket('incoming-simscore-org')
-
+bucket_normal = conn.get_bucket('incoming-simscore-org')
+bucket_test = conn.get_bucket('incoming-simscore-org-test')
 #Connect to sqs
 sqs_conn = boto.connect_sqs(aws_ak, aws_sk)
 q = sqs_conn.get_queue('EdgeFiles2Process')
@@ -58,6 +41,31 @@ sdb_domain = sdb_conn.get_domain('ProcessedEdgeFiles')
 
 # <codecell>
 
+def send_fail(failure, conn): 
+    conn.send_email(source='python@tylerhartley.com',
+        subject='computeSimscore.py Errors', format='html',
+        body=failure, to_addresses=['thartley@simulab.com'])
+    
+def logit(log, message):
+    log.write(message)
+    log.flush()
+    
+def add_file_sdb(domain, meta):
+    attrs = {'IsProcessed':True, 'IsSent':False, 'UploadDateUnix':meta['UploadDateUnix'], 'UploadDate':meta['UploadDate']
+            ,'Score':meta['Score'], 'FailTypes':json.dumps(meta['FailTypes'])
+            , 'IsPractice':meta['IsPractice'], 'UserID':meta['UserID'], 'RToolID': meta['RToolID'] , 'LToolID': meta['LToolID']}
+    return domain.put_attributes(meta['TestID'],attrs)
+
+def whichBucket(bucketname):
+    if bucketname == 'incoming-simscore-org':
+        return bucket_normal
+    elif 'test' in bucketname:
+        return bucket_test
+    else:
+        return conn.get_bucket(bucketname)
+
+# <codecell>
+
 def main():  
     
     #Get a file off the SQS stack using 20sec long poll
@@ -69,7 +77,8 @@ def main():
         try:
             #Pull filename from S3
             filename = mySQS.get_sqs_filename(rs) #'edge6/2012/11/05.18.46.23.340.0.txt'
-            logit(log,'{0}\n{1}\nProcessing {2}\n'.format('-'*20,datetime.now(),filename) )
+            bucketname = mySQS.get_sqs_bucket(rs)
+            logit(log,'{0}\n{1}\nProcessing {2}\nfrom bucket {3}\n'.format('-'*20,datetime.now(),filename, bucketname) )
             
             #Ensure this isn't a Reference block trace
             if 'Trace' in filename: 
@@ -79,7 +88,9 @@ def main():
                 return rs
                 
             #If everything looks good, load the dataaa!
-            data, meta = myS3.getData(bucket, filename, labeled=True)
+            #TODO - implement bucket load from test without re-connecting every damn time
+            
+            data, meta = myS3.getData(whichBucket(bucketname), filename, labeled=True)
             if data == None: raise ValueError, "Data file is empty!"
             
             '''Where the magic happens'''

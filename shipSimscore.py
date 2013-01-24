@@ -22,7 +22,7 @@ from aws import aws_ak, aws_sk
 from boto.sqs.message import Message, RawMessage
 
 def send_fail(failure, conn): 
-    conn.send_email(source='thartley@simulab.com',
+    conn.send_email(source='python@tylerhartley.com',
         subject='shipSimscore.py Errors', format='html',
         body=failure,
         to_addresses=['thartley@simulab.com'])

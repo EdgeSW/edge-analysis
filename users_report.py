@@ -18,7 +18,7 @@ from aws import aws_ak, aws_sk
 
 conn = boto.connect_s3(aws_ak, aws_sk)
 bucket = conn.get_bucket('incoming-simscore-org')
-allfiles = myS3.getFilesBetween(mindate=datetime.now()-timedelta(days=6), maxdate=datetime.now(), bucket=bucket, onlyTxtFiles=True)
+allfiles = myS3.getFilesBetween(mindate=datetime.now()-timedelta(days=9), maxdate=datetime.now(), bucket=bucket, onlyTxtFiles=True)
 
 # <codecell>
 
@@ -57,18 +57,10 @@ for f in ffs:
 
 # <codecell>
 
-import scoring
-report = scoring.load_pickle('user_report.txt')
-
-# <codecell>
-
 import pprint
 pprint.pprint(report)
 
 # <codecell>
-
-%load_ext autoreload
-%autoreload
 
 import json
 from openpyxl.workbook import Workbook
@@ -107,9 +99,28 @@ wb.save(filename = dest_filename)
 # <codecell>
 
 for k in report.keys():
-    filename = report[k]['Suturing'][0][0]
+    try: 
+        filename = report[k]['PegTx'][0][0]
+        print filename.split('/')[1]+'/'+filename.split('/')[2]+'/'+filename.split('/')[3].split('.')[0], filename.split('.')[-3]
+        continue
+    except: pass
+    try: 
+        filename = report[k]['Cutting'][0][0]
+        print filename.split('/')[1]+'/'+filename.split('/')[2]+'/'+filename.split('/')[3].split('.')[0], filename.split('.')[-3]
+        continue
+    except:pass
+    try: 
+        filename = report[k]['Suturing'][0][0]
+        print filename.split('/')[1]+'/'+filename.split('/')[2]+'/'+filename.split('/')[3].split('.')[0], filename.split('.')[-3]
+        continue
+    except:pass
+    try: 
+        filename = report[k]['ClipApply'][0][0]
+        print filename.split('/')[1]+'/'+filename.split('/')[2]+'/'+filename.split('/')[3].split('.')[0], filename.split('.')[-3]
+        continue
+    except: raise ValueError, 'somebody had no tests, wtf mate'
     
-    print filename.split('/')[1]+'/'+filename.split('/')[2]+'/'+filename.split('/')[3].split('.')[0]
+    
 
 # <codecell>
 

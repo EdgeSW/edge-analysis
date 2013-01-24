@@ -44,16 +44,14 @@ if mySQS.approx_total_messages(comq)==0:
 
 # <codecell>
 
-comq.clear()
-q.clear()
 if mySQS.approx_total_messages(comq)==0:
     print 'processing'
     conn = boto.connect_s3(aws_ak, aws_sk)
     bucket = conn.get_bucket('incoming-simscore-org')
     
-    t0 = datetime.now()-timedelta(days=150) #138
-    #filelist = myS3.getFilesBetween(mindate=t0, maxdate=datetime.now(), bucket=bucket, onlyTxtFiles=True)
-    filelist =  ['edge11/2013/01/07.18.32.15.109.0.txt','edge7/2013/01/07.16.59.48.370.2.txt','edge11/2013/01/04.21.36.02.109.0.txt']
+    t0 = datetime.now()-timedelta(days=3) #138
+    filelist = myS3.getFilesBetween(mindate=t0, maxdate=datetime.now(), bucket=bucket, onlyTxtFiles=True)
+    #filelist =  ['edge11/2013/01/07.18.32.15.109.0.txt','edge7/2013/01/07.16.59.48.370.2.txt','edge11/2013/01/04.21.36.02.109.0.txt']
     print len(filelist), filelist
     
     if len(filelist) > 0:

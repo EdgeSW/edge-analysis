@@ -40,7 +40,7 @@ def getData(bucket=None, filename=None, labeled=False):
     meta = getMetaData(filename, bucket)
     return data, meta
 
-def getFilesBetween(mindate=None, maxdate=datetime.now(), bucket=None, onlyTxtFiles=False): #edit to take in conn and bucketname for consistency?
+def getFilesBetween(mindate=None, maxdate=datetime.utcnow(), bucket=None, onlyTxtFiles=False): #edit to take in conn and bucketname for consistency?
     '''Fetch a list of EVERY file on S3 between given dates. MUCH faster than retreiving 
     all file keys and then parsing, especially as S3 grows. I know its a lot of for loops, deal with it
     Output: files is a list of strings'''
@@ -72,7 +72,7 @@ def getTestFiles(filelist=None, bucket=None, getPractice=False):
             output.append(f)
     return output
     
-def getTestFilesBetween(mindate=None, maxdate=datetime.now(), bucket=None, getPractice=False):
+def getTestFilesBetween(mindate=None, maxdate=datetime.utcnow(), bucket=None, getPractice=False):
     '''wrapper for getTestFiles'''
     filelist = getFilesBetween(mindate, maxdate, bucket, onlyTxtFiles=True)
     return getTestFiles(filelist, bucket, getPractice)
@@ -95,7 +95,7 @@ def getDataFromTxtFileList(bucket=None, files=None, labeled=False, includeMeta=T
         
     return allData   
 
-def getDataBetween(mindate=None, maxdate=datetime.now(), bucket=None, labeled=False, includeMeta=True, includePractice=True):
+def getDataBetween(mindate=None, maxdate=datetime.utcnow(), bucket=None, labeled=False, includeMeta=True, includePractice=True):
     '''Returns data between two dates as dict, can include meta data if you want.
     Basically a glorified wrapper for getDataFromTxtFileList'''
     if bucket == None: bucket = getBucketConn()
@@ -113,8 +113,8 @@ def getMetaDataBetween(mindate=None, maxdate=None, bucket=None):
 
 def getLeftBehind(daysback, conn=None, sdb_domain=None):
     '''locate files on S3 that have not been added as items to a SimpleDB domain'''
-    mindate = datetime.now() -timedelta(days=daysback)
-    s3_files = getFilesBetween(mindate, datetime.now(), conn.get_bucket('incoming-simscore-org'), onlyTxtFiles=True)
+    mindate = datetime.utcnow() -timedelta(days=daysback)
+    s3_files = getFilesBetween(mindate, datetime.utcnow(), conn.get_bucket('incoming-simscore-org'), onlyTxtFiles=True)
     sdb_items = [item.name for item in sdb_domain]
     
     return [f for f in s3_files if f[:-4] not in sdb_items]

@@ -18,7 +18,9 @@ from aws import aws_ak, aws_sk
 
 conn = boto.connect_s3(aws_ak, aws_sk)
 bucket = conn.get_bucket('incoming-simscore-org')
-allfiles = myS3.getFilesBetween(mindate=datetime.now()-timedelta(days=9), maxdate=datetime.now(), bucket=bucket, onlyTxtFiles=True)
+lastcheck = datetime.now()
+print lastcheck
+allfiles = myS3.getFilesBetween(mindate=datetime.now()-timedelta(days=4), maxdate=datetime.utcnow(), bucket=bucket, onlyTxtFiles=True)
 
 # <codecell>
 
@@ -54,11 +56,6 @@ for f in ffs:
     report[uid]['Summary'][task] += 1
     report[uid][tasks[task]].append([f, failtypes])
         
-
-# <codecell>
-
-import pprint
-pprint.pprint(report)
 
 # <codecell>
 
@@ -123,5 +120,7 @@ for k in report.keys():
     
 
 # <codecell>
+
+
 
 

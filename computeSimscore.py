@@ -75,7 +75,7 @@ def main():
     if rs:
         '''Compute all metrics and send'''
         try:
-            #Pull filename from S3
+            #Pull filename and from queued message
             filename = mySQS.get_sqs_filename(rs) #'edge6/2012/11/05.18.46.23.340.0.txt'
             bucketname = mySQS.get_sqs_bucket(rs)
             logit(log,'{0}\n{1}\nProcessing {2}\nfrom bucket {3}\n'.format('-'*20,datetime.now(),filename, bucketname) )
@@ -88,8 +88,6 @@ def main():
                 return rs
                 
             #If everything looks good, load the dataaa!
-            #TODO - implement bucket load from test without re-connecting every damn time
-            
             data, meta = myS3.getData(whichBucket(bucketname), filename, labeled=True)
             if data == None: raise ValueError, "Data file is empty!"
             
@@ -102,13 +100,12 @@ def main():
             #Score data
             jsonSimscore.update({'Score': 'None'}) #scoring.score_test(data, meta)} )
             
-            #Processing is completed --Add this jsonSimscore to new SQS stack for POST
+            #cleanup long floats, NaN values
             jsonSimscore = vm.round_dict(jsonSimscore,3)
             jsonSimscore = vm.nan_replace(jsonSimscore)
             logit(log,'Successfully processed.\n'); print 'Successfully processed.'
             
-            
-            '''Add to queue for shipSimscore'''
+            '''Processing is completed --Add json to new SQS stack for POST'''
             receipt = mySQS.append_to_queue(jsonSimscore, shipq, raw=False)
             assert receipt, "Could not write to queue"    
             #If json is DEFINITELY received by new SQS, delete from original Files2Process queue
@@ -141,8 +138,8 @@ def main():
 
 if __name__ == "__main__":
     # Open up log file to write pycurl info to
-    log = open (os.getcwd()+'\\ComputeFails.log', 'a')
-    #log = open ('/home/ubuntu/logs/ComputeFails.log', 'a')
+    #log = open (os.getcwd()+'\\ComputeFails.log', 'a')
+    log = open ('/home/ubuntu/logs/ComputeFails.log', 'a')
     logit(log,'{0}\n{1}\n{2}\n'.format('*'*26,datetime.now(),'Booting up computeSimscore.py'))
     
     '''Run Eternally'''

@@ -31,10 +31,8 @@ def logit(log, message):
     log.write(message)
     log.flush()
 
-def trysleeptimes(trys):
-    global sleeptimes
-    sleeptimes = [0, 1, 10, 100, 200, 1000]
-    
+sleeptimes = [0, 1, 10, 100, 200, 1000]
+def trysleeptimes(trys, sleeptimes):
     if trys < len(sleeptimes):
         time.sleep(sleeptimes[trys])
     else:
@@ -106,7 +104,7 @@ def main(c):
             #else if no response, don't receive 200, simscore down, etc:
             elif http_response in range(500,599):
                 logit(log,'Simscore error, HTTP/1.1:%d, waiting %d seconds\n%s'%(http_response, sleeptimes[trys], out.getvalue()) )
-                trysleeptimes(trys)
+                trysleeptimes(trys, sleeptimes)
                 trys += 1
                 
             elif http_response == 409:

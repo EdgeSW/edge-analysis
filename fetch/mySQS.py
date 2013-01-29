@@ -52,5 +52,5 @@ def append_to_queue(content, queue, raw=False):
 def append_list_to_queue(theforgotten, q=None):
     '''writes list of messages to SQS'''
     for f in theforgotten:
-        append_to_queue({'Message': f[:-3]+'log'}, q, raw=True)
+        append_to_queue({'Message': f[:-3]+'log', 'Subject': 'New Appended File'}, q, raw=True)
 ###

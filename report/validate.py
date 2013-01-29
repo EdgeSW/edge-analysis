@@ -3,6 +3,7 @@ import os, json
 
 from fetch.configuration import ranges
 from helpers import appendOrCreate
+from report.KnownErrors import knownerrors
 
 def findMinMax(data):    
     data.dtype.names
@@ -44,27 +45,6 @@ def findOutOfRange(minmax):
     return results
 
 ##### Code to handle conditional error ignoring (IgnoreErrors) #####
-def loadKnownErrors(filepath=None):
-    '''Load the known error file regardless of being on local (windows) or
-on ec2 (Unix). I hate backslashes! '''
-    try:
-        if filepath != None:
-            fh = open(filepath,'r')
-        elif "C:" in os.getcwd():
-            fh = open(r'C:\Users\Tyler\.ipython\Simscore-Computing\report\KnownErrors.txt','r')
-        else: fh = open('Simscore-Computing/report/KnownErrors.txt','r')
-    except IOError: 
-        print 'no KnownError file'
-        return {}
-        
-    try:  
-        ke = json.loads(fh.read())
-    except ValueError:
-        return {}
-        
-    fh.close()
-    return ke
-    
 def evalKnownErrors(js, minmax, knownerrors):
     '''Given comuted info about an exam (js) and the minmax values and
 a list of user-defined knownerrors, create a dict of sensors and failtype to ignore'''
@@ -86,7 +66,6 @@ def ignoreErrors(js, minmax, isClipApply):
     '''create dict of errors to ignore for simscore. include ignoring known errors
 as well as specific, user-identified commonplace, non-important errors'''
     #Ignore known errors
-    knownerrors = loadKnownErrors()
     ignore = evalKnownErrors(js, minmax, knownerrors)
     
     #Ignore dead FgL during ClipApply

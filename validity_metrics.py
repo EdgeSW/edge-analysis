@@ -175,7 +175,7 @@ def data_metrics_append(jsonSimscore, data, filename):
         #Max	Float	Min	Float                 
          'MinMax' : nan_replace(minmax)
         #Dead	Boolean	
-        ,'DeadSensors' : validate.findDeadSensor(minmax, isClipApply)
+        ,'DeadSensors' : validate.findDeadSensor(validate.findMinMax(data), isClipApply)
         #Out of Range	Boolean
         ,'OutOfRange' : validate.findOutOfRange(minmax)
         #NaN	Boolean	

@@ -3,6 +3,9 @@
 
 # <codecell>
 
+import sys
+sys.path.append('C:\\Users\\Tyler\\.ipython\\Simscore-Computing')
+
 import numpy as np
 import json, string, re
 import time, datetime
@@ -165,16 +168,20 @@ def summary_metrics(meta,data,conn):
 from fetch.configuration import isClipTask   
                 
 def data_metrics_append(jsonSimscore, data, filename):
+    minmax = validate.findMinMax(data)
+    isClipApply = isClipTask(filename)
     
     jsonSimscore.update({
         #Max	Float	Min	Float                 
-         'MinMax' : nan_replace(validate.findMinMax(data))
+         'MinMax' : nan_replace(minmax)
         #Dead	Boolean	
-        ,'DeadSensors' : validate.findDeadSensor(validate.findMinMax(data), isClipTask(filename))
+        ,'DeadSensors' : validate.findDeadSensor(minmax, isClipApply)
         #Out of Range	Boolean
-        ,'OutOfRange' : validate.findOutOfRange(validate.findMinMax(data))
+        ,'OutOfRange' : validate.findOutOfRange(minmax)
         #NaN	Boolean	
-        ,'NaNSensors' : validate.findNans(data, isClipTask(filename))  
+        ,'NaNSensors' : validate.findNans(data, isClipApply)  
+        #Known errors to ignore on simscore.org
+        ,'IgnoreErrors' : validate.ignoreErrors(jsonSimscore, minmax, isClipApply)
     })
 
     return jsonSimscore

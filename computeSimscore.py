@@ -89,7 +89,7 @@ def main():
                 
             #If everything looks good, load the dataaa!
             data, meta = myS3.getData(whichBucket(bucketname), filename, labeled=True)
-            if data == None: raise ValueError, "Data file is empty!"
+            if data==None: raise ValueError, "Data file is empty!"
             
             '''Where the magic happens'''
             #Compute Summary Metrics

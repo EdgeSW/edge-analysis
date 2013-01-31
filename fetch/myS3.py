@@ -17,10 +17,16 @@ def getRawData(bucket=None, filename=None, labeled=False):
     if bucket == None: bucket = getBucketConn()
     bKey = bucket.get_key(filename)
     if not bKey: raise ValueError, "File not found on S3"
-    txt, header = cleanRaw(bKey)
-    if not txt.tell():  #added 1/7/13 to deal with edge uploads of empty files
+    txt = cleanRaw(bKey)
+    header = txt.readline().strip().split() 
+    
+    if not header or txt.tell() == 0:  #added 1/7/13 to deal with edge uploads of empty files
+        return None                 #edited 1/30 to include length of header (220bytes)
+    if not txt.readline():
         return None
-        #raise ValueError, "Data file is empty!"
+    
+    txt.seek(0)
+    txt.readline()
     return dataParse(txt, header, labeled)
     
 def getMetaData(filename=None, bucket=None):  
@@ -167,8 +173,8 @@ def cleanRaw(bKey):
     txt = cStringIO.StringIO()
     bKey.get_contents_to_file(txt)
     txt.seek(0) #seeks to start of file
-    header = txt.readline().strip().split() 
-    return txt, header
+    return txt
+    #header = txt.readline().strip().split() 
       
 def getEdgeFolderNamesOnS3(conn=None, bucketname='incoming-simscore-org'):
     '''return the prefixes on s3 buckets that correspond to folders containing Edge data'''

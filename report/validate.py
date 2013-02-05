@@ -1,7 +1,7 @@
 import numpy as np
 import os, json
 
-from fetch.configuration import ranges
+from report.configuration import ranges
 from helpers import appendOrCreate
 from report.KnownErrors import knownerrors
 

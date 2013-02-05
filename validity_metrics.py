@@ -165,7 +165,7 @@ def summary_metrics(meta,data,conn):
 
 # <codecell>
 
-from fetch.configuration import isClipTask   
+from report.configuration import isClipTask   
                 
 def data_metrics_append(jsonSimscore, data, filename):
     minmax = validate.findMinMax(data)

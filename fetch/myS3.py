@@ -1,7 +1,7 @@
 import json, cStringIO
 from datetime import datetime, timedelta
-from fetch.configuration import formats
-from fetch.configuration import converterdict
+from report.configuration import formats
+from report.configuration import converterdict
 import numpy as np
 import boto
 from aws import aws_ak, aws_sk
@@ -86,7 +86,9 @@ def getTestFilesBetween(mindate=None, maxdate=datetime.utcnow(), bucket=None, ge
 def getDataFromTxtFileList(bucket=None, files=None, labeled=False, includeMeta=True, includePractice=True):
     '''Given a list of .txt files on S3, will return data associated with each file in that list.
     MUST be given only list of .txt files. If you want only meta data, use getMetaDataBetween()
-    Can be set to return meta data too. Can return data as "labeled" data with assigned dtype. '''
+    Can be set to return meta data too. Can return data as "labeled" data with assigned dtype. 
+    
+    RETURNS: dict of dicts with keys as filenames, containing two keys, 'data' and 'meta'''
     if bucket == None: bucket = getBucketConn()
     allData = {}
     for f in files:
@@ -108,8 +110,9 @@ def getDataBetween(mindate=None, maxdate=datetime.utcnow(), bucket=None, labeled
     files = getFilesBetween(mindate, maxdate, bucket, onlyTxtFiles=True)
     return getDataFromTxtFileList(bucket, files, labeled, includeMeta, includePractice)
     
-def getMetaDataBetween(mindate=None, maxdate=None, bucket=None):
-    '''Go get only meta data between 2 dates'''
+def getMetaDataBetween(mindate=None, maxdate=datetime.utcnow(), bucket=None):
+    '''Go get only meta data between 2 dates. Returns dictionary of filename
+keyed to the dictionary of metadata'''
     if bucket == None: bucket = getBucketConn()
     meta = {}
     files = getFilesBetween(mindate, maxdate, bucket, onlyTxtFiles=False)

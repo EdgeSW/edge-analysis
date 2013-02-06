@@ -18,6 +18,9 @@ def findNans(data, isClipTask):
             results.append(n)
     return results
         
+def isDead(minmax, isClipTask):
+    pass
+    
 def findDeadSensor(minmax, isClipTask):
     results = []
     

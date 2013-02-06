@@ -27,3 +27,16 @@ def save_pickle(content, filepath, ftype='w'):
     xx = pickle.dump(content, f)
     f.close()
     return xx
+
+def lists_contain_same(lis1, lis2):
+    if lis1 == lis2:
+        return True
+    if len(lis1)!=len(lis2):
+        return False
+    for item in lis1:
+        if item not in lis2:
+            return False
+    for item in lis2:
+        if item not in lis1:
+            return False
+    return True

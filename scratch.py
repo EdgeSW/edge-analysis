@@ -20,43 +20,14 @@ bucket = conn.get_bucket('incoming-simscore-org')
 
 # <codecell>
 
-def lists_contain_same(lis1, lis2):
-    if lis1 == lis2:
-        return True
-    if len(lis1)!=len(lis2):
-        return False
-    for item in lis1:
-        if item not in lis2:
-            return False
-    for item in lis2:
-        if item not in lis1:
-            return False
-    return True
-
-# <codecell>
-
-foo = ['edge1/2012/10/08.15.22.48.323.1.txt', #should be dead FgL
-    'edge6/2013/01/25.21.33.58.393.0.txt', # should be dead thg_l, rot_l
-    'edge2/2013/01/09.16.06.18.378.3.txt', # shuld be dead fgr
-    'edge2/2012/12/03.20.12.46.109.3.txt', # should be dead fgr
-    'edge2/2012/12/03.17.30.47.109.3.txt', # should be dead FgR, FgL
-    'edge3/2012/11/02.20.21.23.338.0.txt', # should be dead ThG_L
-    'edge6/2012/11/05.19.24.12.340.2.txt', #should be dead RotL, FgL (only RotL right now)
-    'edge6/2013/01/25.22.30.14.312.0.txt'] # should be dead FgR, TghR, RotR
-
-expected_deads = ['edge6/2013/01/25.21.38.35.393.0.txt','edge6/2013/01/25.22.30.14.312.0.txt']
-laterchecks = ['edge2/2012/12/03.17.28.20.109.3.txt','edge2/2012/12/03.17.05.47.109.3.txt']#why does this not say LinR in badsensors? http://simscore.org/edge/test/1185
-
-
-
-# <codecell>
-
 unit_files = [#Name, Dead, OOR, NaN
 (	"edge6/2013/01/31.00.42.06.392.3.txt"	,	[]	,	[]	,	[]	),
 (	"edge10/2013/01/22.18.09.46.209.0.txt"	,	[]	,	[]	,	[]	),
 (	"edge10/2013/01/26.16.02.02.365.0.txt"	,	[]	,	[]	,	[]	),
 (	"edge3/2013/01/18.18.54.37.336.1.txt"	,	[]	,	[]	,	[]	),
 (	"edge6/2013/01/31.00.50.47.392.2.txt"	,	[]	,	[]	,	[]	),
+(	"edge10/2013/01/24.17.05.48.389.2.txt"	,	[]	,	[]	,	[]	),
+(	"edge10/2013/01/10.15.22.12.389.2.txt"	,	[]	,	[]	,	[]	),
 (	"edge6/2013/01/31.00.46.29.392.2.txt"	,	[]	,	[]	,	[]	),
 																
 (	"edge7/2012/12/07.15.37.27.109.2.txt"	,	[]	,	["ThG_L", "Fg_L", "ThG_R"]	,	[]	),
@@ -80,98 +51,18 @@ unit_files = [#Name, Dead, OOR, NaN
 
 # <codecell>
 
-#Compute Summary Metrics
-datadict = myS3.getDataFromTxtFileList(bucket, foo, labeled=True)
-
-# <codecell>
-
-#test against nan data 
-def isDead(vector, dmin, dmax, taskid, snsr, isPractice):
-    '''Vector: one senor vector. dmin and dmax are calculated from report.validate.
-isClipApply is a boolean value.
-Function returns boolean.'''
-    #first, do a check to make sure Rotation isn't off the charts
-    if dmin < -1e6 or dmax > 1e6: return False
-    
-    #first check - highly stringent, whole test approach
-    if abs(dmax - dmin) < 0.005: 
-        return True
-    
-    if isPractice: return False
-    
-    #second check - does any pair of precise values account for 95% of values
-        #and those two values are separated by less than 1 unit
-    numbins = (dmax - dmin)/0.01
-    if numbins > 720/0.01: numbins = 720/0.01
-    a, b = np.histogram(vector, numbins)
-    
-    if sum(a[a.argsort()[-2:]])/float(len(vector)) > .95:
-        return True
-    
-    #placed so that the third check is not performed for clip applys and
-    #that suturing tasks don't do a length check for grasps (normal usage)
-    if taskid == 3: return False
-    if taskid == 2 and snsr in ['ThG_L','ThG_R']: return False
-    
-    #third check - is data dead for a time
-    deadtime = 25*30#seconds*samplerate
-    for i in range(0,len(vector)-deadtime, 5*30):
-        if np.max(vector[i:i+deadtime]) - np.min(vector[i:i+deadtime]) < 0.01:
-            return True
-        
-    return False
-    
-def isFgDead(Fg, dmin, dmax):
-    '''The more complex checks in isDead do not apply to grasp force, which is often
-intentionally "dead" for extended periods between grasps. Thus, a very simple check is required'''
-    if dmax-dmin < 1: #3 is Tim's cutoff for grasp
-        return True
-    else:
-        return False
-
-# <codecell>
-
-def findDeadSensors(data, minmax, taskid, isPractice):
-    '''overarching check for dead sensors in a given test. data is a matrix of sensor 
-vectors, minmax is a dict of dicts computed from validate.minmax.
-Returns: a list of sensors determined to be dead.'''
-    results = []
-    
-    for name in data.dtype.names:
-        if taskid ==3 and name in ['Rot_R','ThG_R']:
-            continue
-        
-        if name in ['Fg_L','Fg_R']:
-            if isFgDead(data[name], minmax[name]['min'], minmax[name]['max']):
-                results.append(name)
-        elif isDead(data[name], minmax[name]['min'], minmax[name]['max'], taskid, name, isPractice):
-            results.append(name)
-            
-    return results
-
-#filename = 'edge6/2013/01/25.22.30.14.312.0.txt'
-#dd = datadict[filename]['data']
-#minmax = validate.findMinMax(dd)
-#findDeadSensors(dd, minmax, isClipTask(filename))
-
-# <codecell>
-
-#biglist = myS3.getFilesBetween(datetime.utcnow()-timedelta(days=30), datetime.utcnow(), bucket, True)
-
-# <codecell>
-
 new_deads = []
 for test in unit_files:
     try:
         data, meta = myS3.getData(bucket, test[0], labeled=True)
         minmax = validate.findMinMax(data)
         
-        new_dead = findDeadSensors(data, minmax, meta['TaskId'], meta['IsPracticeTest'])
-        old_dead = validate.findDeadSensor(validate.findMinMax(data), isClipTask(test[0]))
+        new_dead = validate.findDeadSensors(data, minmax, meta['TaskId'], meta['IsPracticeTest'])
+        old_dead = validate.oldFindDeadSensor(validate.findMinMax(data), isClipTask(test[0]))
         #oors = validate.findOutOfRange(minmax)
         
         print 'verifying',test[0]
-        print 'Dead sensors should be:', test[2]
+        print 'Dead sensors should be:', test[1]
         print 'New method caught:', new_dead
         print 'Old method caught:', old_dead
         print 
@@ -181,6 +72,25 @@ for test in unit_files:
 
 # <codecell>
 
+biglist = myS3.getFilesBetween(datetime.utcnow()-timedelta(days=30), datetime.utcnow(), bucket, True)
+
+# <codecell>
+
+import time
+for filename in biglist:
+    try:
+        data, meta = myS3.getData(bucket, filename, labeled=True)
+        minmax = validate.findMinMax(data)
+        
+        new_dead = findDeadSensors(data, minmax, meta['TaskId'], meta['IsPracticeTest'])
+        old_dead = validate.findDeadSensor(validate.findMinMax(data), isClipTask(filename))
+        
+        if filename[-5:]=='2.txt':
+            print filename,old_dead, new_dead
+        time.sleep(0.1)
+    except Exception as e:
+        print e
+        print filename
 
 # <rawcell>
 

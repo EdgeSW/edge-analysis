@@ -17,25 +17,6 @@ def findNans(data, isClipTask):
         if not isClipTask or n not in ['Rot_R','ThG_R']: 
             results.append(n)
     return results
-        
-def isDead(minmax, isClipTask):
-    pass
-    
-def findDeadSensor(minmax, isClipTask):
-    results = []
-    
-    for k, v in minmax.iteritems():
-        #appended 1/2/13 because left graspers not always closed during CA task
-        #EDIT 1/28/13 now covered in ignoreErrors
-        #if k == 'Fg_L' and isClipTask and (abs(v['max'] - v['min']) < 0.005): continue
-        
-        if not isClipTask:
-            if  (abs(v['max'] - v['min']) < 0.005):
-                results.append(k)
-        else:
-            if  (abs(v['max'] - v['min']) < 0.005) and k != 'Rot_R' and k != 'ThG_R':
-                results.append(k)
-    return results
 
 #TODO: change minmax range to handle different test types (needledrivers have different ThG)
 def findOutOfRange(minmax):
@@ -47,7 +28,81 @@ def findOutOfRange(minmax):
             results.append(k)
     return results
 
-##### Code to handle conditional error ignoring (IgnoreErrors) #####
+############Dead Sensor Checks###############
+def isDead(vector, dmin, dmax, taskid, snsr, isPractice):
+    '''Vector: one senor vector. dmin and dmax are calculated from report.validate.
+isClipApply is a boolean value.
+Function returns boolean.'''
+    #first, do a check to make sure Rotation isn't off the charts
+    if dmin < -1e6 or dmax > 1e6: return False
+    
+    #first check - highly stringent, whole test approach
+    if abs(dmax - dmin) < 0.005: 
+        return True
+    
+    if isPractice: return False
+    
+    #second check - does any pair of precise values account for 95% of values
+        #and those two values are separated by less than 1 unit
+    numbins = (dmax - dmin)/0.01
+    if numbins > 720/0.01: numbins = 720/0.01
+    a, b = np.histogram(vector, numbins)
+    
+    if sum(a[a.argsort()[-2:]])/float(len(vector)) > .95:
+        return True
+    
+    #placed so that the third check is not performed for clip applys and
+    #that suturing tasks don't do a length check for grasps (normal usage)
+    if taskid == 3: return False
+    if taskid == 2 and snsr in ['ThG_L','ThG_R']: return False
+    
+    #third check - is data dead for a time
+    deadtime = 25*30#seconds*samplerate
+    timeAtEndToAvoid = 60*30 if taskid==2 else 0 #since users set down tool to cut
+    for i in range(0,len(vector)-deadtime-timeAtEndToAvoid, 5*30):
+        if np.max(vector[i:i+deadtime]) - np.min(vector[i:i+deadtime]) < 0.01:
+            return True
+        
+    return False
+    
+def isFgDead(Fg, dmin, dmax):
+    '''The more complex checks in isDead do not apply to grasp force, which is often
+intentionally "dead" for extended periods between grasps. Thus, a very simple check is required'''
+    if dmax-dmin < 1: #3 is Tim's cutoff for grasp
+        return True
+    else:
+        return False
+
+def findDeadSensors(data, minmax, taskid, isPractice):
+    '''overarching check for dead sensors in a given test. data is a matrix of sensor 
+vectors, minmax is a dict of dicts computed from validate.minmax.
+Returns: a list of sensors determined to be dead.'''
+    results = []
+    
+    for name in data.dtype.names:
+        if taskid ==3 and name in ['Rot_R','ThG_R']:
+            continue
+        
+        if name in ['Fg_L','Fg_R']:
+            if isFgDead(data[name], minmax[name]['min'], minmax[name]['max']):
+                results.append(name)
+        elif isDead(data[name], minmax[name]['min'], minmax[name]['max'], taskid, name, isPractice):
+            results.append(name)
+            
+    return results
+
+def oldFindDeadSensor(minmax, isClipTask):
+    results = []
+    for k, v in minmax.iteritems():
+        if not isClipTask:
+            if  (abs(v['max'] - v['min']) < 0.005):
+                results.append(k)
+        else:
+            if  (abs(v['max'] - v['min']) < 0.005) and k != 'Rot_R' and k != 'ThG_R':
+                results.append(k)
+    return results
+
+######## Code to handle conditional error ignoring (IgnoreErrors) ########
 def evalKnownErrors(js, minmax, knownerrors):
     '''Given comuted info about an exam (js) and the minmax values and
 a list of user-defined knownerrors, create a dict of sensors and failtype to ignore'''

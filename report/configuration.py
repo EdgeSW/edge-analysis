@@ -11,14 +11,14 @@ default_kinematics = {
 
 ##Tool Grasp Ranges##
 interchangable = {
-                'ThG_L': {'min': -5.5, 'max': 17. }
-                ,'ThG_R': {'min': -17., 'max': 5.5 }
+                'ThG_L': {'min': -8., 'max': 20. }
+                ,'ThG_R': {'min': -20., 'max': 8. }
                 ,'Fg_L': {'min': -0.6, 'max': 150. }
                 ,'Fg_R': {'min': -0.6, 'max': 150. }
                   }
 needle_driver = {
-                'ThG_L': {'min': -50., 'max': 50. }
-                ,'ThG_R': {'min': -50., 'max': 50. }
+                'ThG_L': {'min': -40., 'max': 40. }
+                ,'ThG_R': {'min': -40., 'max': 40. }
                 ,'Fg_L': {'min': -0.6, 'max': 150. }
                 ,'Fg_R': {'min': -0.6, 'max': 150. }
                   }
@@ -44,15 +44,16 @@ not_gr_ranges = {
 			, 'Y_R'		: {'min': -17., 'max': 12. }
 			, 'Z_R'		: {'min': -8., 'max': 15. }
 		}
-'''
+
 ##Task-Specific Ranges##
-ranges = {
+task_ranges = {
         0 : dict(interchangable.items() + not_gr_ranges.items() )
-        ,1 : {}
-        ,2 : {}
-        ,3 : {}
+        ,1 : dict(interchangable.items() + not_gr_ranges.items() )
+        ,2 : dict(needle_driver.items() + not_gr_ranges.items() )
+        ,3 : dict([('ThG_L',needle_driver['ThG_L']), ('Fg_L',needle_driver['Fg_L']) ] + 
+                clip_applier.items() + not_gr_ranges.items() )
     }
-'''
+
 
 ranges = {		
 			'%Time_V1'	: {'min': 0., 'max': None }

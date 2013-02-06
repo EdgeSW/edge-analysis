@@ -2,6 +2,7 @@ import numpy as np
 import os, json
 
 from report.configuration import ranges
+from report.configuration import task_ranges
 from helpers import appendOrCreate
 from report.KnownErrors import knownerrors
 
@@ -19,13 +20,22 @@ def findNans(data, isClipTask):
     return results
 
 #TODO: change minmax range to handle different test types (needledrivers have different ThG)
-def findOutOfRange(minmax):
+def oldFindOutOfRange(minmax):
     results = []
     for k, v in minmax.iteritems():
         r = ranges.get(k)
         if r and ((r['min'] is not None and (v['min'] < r['min'])) or 
                   (r['max'] is not None and (v['max'] > r['max']))):
             results.append(k)
+    return results
+    
+def findOutOfRanges(minmax, taskid):
+    results = []
+    for snsr, v in minmax.iteritems():
+        r = task_ranges[taskid][snsr]
+        if r and ((r['min'] is not None and (v['min'] < r['min'])) or 
+                  (r['max'] is not None and (v['max'] > r['max']))):
+            results.append(snsr)
     return results
 
 ############Dead Sensor Checks###############
@@ -111,11 +121,14 @@ a list of user-defined knownerrors, create a dict of sensors and failtype to ign
         if tid in knownerrors.keys():
             snsr = knownerrors[tid][0]
             failtype = knownerrors[tid][1]
+            minormax = minmax[snsr][knownerrors[tid][2]]
             #Implemented so that OutOfRanges could be direction specific
             if failtype == 'OutOfRange' and knownerrors[tid][2]=='min':
-                if minmax[snsr][knownerrors[tid][2]] < ranges[snsr][knownerrors[tid][2]]: appendOrCreate(ignore, snsr, failtype)
+                if minormax > knownerrors[tid][3] and minormax < task_ranges[js['TaskType']][snsr]['min']: 
+                    appendOrCreate(ignore, snsr, failtype)
             elif failtype == 'OutOfRange' and knownerrors[tid][2]=='max':
-                if minmax[snsr][knownerrors[tid][2]] > ranges[snsr][knownerrors[tid][2]]: appendOrCreate(ignore, snsr, failtype)
+                if minormax < knownerrors[tid][3] and minormax > task_ranges[js['TaskType']][snsr]['max']: 
+                    appendOrCreate(ignore, snsr, failtype)
                 
             else: ignore[snsr] = [failtype]
     return ignore

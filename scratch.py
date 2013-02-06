@@ -72,10 +72,7 @@ for test in unit_files:
 
 # <codecell>
 
-biglist = myS3.getFilesBetween(datetime.utcnow()-timedelta(days=30), datetime.utcnow(), bucket, True)
-
-# <codecell>
-
+'''
 import time
 for filename in biglist:
     try:
@@ -91,6 +88,56 @@ for filename in biglist:
     except Exception as e:
         print e
         print filename
+'''
+
+# <codecell>
+
+biglist = myS3.getFilesBetween(datetime.utcnow()-timedelta(days=30), datetime.utcnow(), bucket, True)
+print len(biglist)
+
+# <codecell>
+
+def lists_contain_same(lis1, lis2):
+    if lis1 == lis2:
+        return True
+    if len(lis1)!=len(lis2):
+        return False
+    for item in lis1:
+        if item not in lis2:
+            return False
+    for item in lis2:
+        if item not in lis1:
+            return False
+    return True
+
+# <codecell>
+
+filename = 'edge0/2013/01/10.06.22.05.109.0.txt'
+data, meta = myS3.getData(bucket, filename, labeled=True)
+minmax = validate.findMinMax(data)
+old_oors = validate.oldFindOutOfRange(minmax)
+js = vm.summary_metrics(meta, data, conn)
+js = vm.data_metrics_append(js, data, filename)
+
+# <codecell>
+
+import time
+for filename in biglist:
+    try:
+        data, meta = myS3.getData(bucket, filename, labeled=True)
+        minmax = validate.findMinMax(data)
+        
+        old_oors = validate.oldFindOutOfRange(minmax)
+        js = vm.summary_metrics(meta, data, conn)
+        js = vm.data_metrics_append(js, data, filename)
+        new_oors = js['OutOfRange']
+        ignore = js['IgnoreErrors']
+        
+        if not lists_contain_same(old_oors, new_oors):
+            print filename,old_oors, new_oors, ignore
+        time.sleep(0.1)
+    except Exception as e:
+        print e, filename
 
 # <rawcell>
 

@@ -172,18 +172,17 @@ def data_metrics_append(jsonSimscore, data, filename):
     isClipApply = isClipTask(filename)
     
     jsonSimscore.update({
-        #Max	Float	Min	Float                 
-         'MinMax' : nan_replace(minmax)
         #Dead	Boolean	
-        ,'DeadSensors' : validate.findDeadSensor(validate.findMinMax(data), isClipApply)
+        'DeadSensors' : validate.findDeadSensors(data, minmax, jsonSimscore['TaskType'], jsonSimscore['IsPractice'])
         #Out of Range	Boolean
-        ,'OutOfRange' : validate.findOutOfRange(minmax)
+        ,'OutOfRange' : validate.findOutOfRanges(minmax, jsonSimscore['TaskType'])
         #NaN	Boolean	
         ,'NaNSensors' : validate.findNans(data, isClipApply)  
         #Known errors to ignore on simscore.org
         ,'IgnoreErrors' : validate.ignoreErrors(jsonSimscore, minmax, isClipApply)
+        #Max    Float    Min    Float                 
+        ,'MinMax' : nan_replace(minmax)
     })
-
     return jsonSimscore
 
 #jsonSimscore = data_metrics_append(jsonSimscore, data, filename)

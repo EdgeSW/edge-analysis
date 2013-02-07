@@ -113,7 +113,7 @@ def summary_metrics(meta,data,conn):
         #BadFramesCheck bool        serious amount of dropped frames
         ,'BadFrames': ok if meta['VideoDroppedFrameCount'] < 30 else bad
         #IsUpdate   Bool   Set to False for all first time tests. must manually set to true to update Simscore's entry for this test
-        ,'IsUpdate': False
+        ,'IsUpdate': True
                     }
 
     #ProctorValues

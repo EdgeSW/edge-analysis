@@ -148,7 +148,7 @@ as well as specific, user-identified commonplace, non-important errors'''
             
     #Ignore dead FgOffhand during Cutting
     if js["TaskType"] == 1:
-        hand = 'L' if js["ProctorValues"]["LeftToolIsScissors"] else 'R'
+        hand = 'R' if js["ProctorValues"]["LeftToolIsScissors"] else 'L'
         appendOrCreate(ignore, 'Fg_'+hand, 'DeadSensors')
     
     #DURING PRACTICE:

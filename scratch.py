@@ -92,7 +92,7 @@ for filename in biglist:
 
 # <codecell>
 
-biglist = myS3.getFilesBetween(datetime.utcnow()-timedelta(days=30), datetime.utcnow(), bucket, True)
+biglist = myS3.getFilesBetween(datetime.utcnow()-timedelta(days=160), datetime.utcnow(), bucket, True)
 print len(biglist)
 
 # <codecell>
@@ -112,70 +112,67 @@ def lists_contain_same(lis1, lis2):
 
 # <codecell>
 
-filename = 'edge0/2013/01/10.06.22.05.109.0.txt'
-data, meta = myS3.getData(bucket, filename, labeled=True)
-minmax = validate.findMinMax(data)
-old_oors = validate.oldFindOutOfRange(minmax)
-js = vm.summary_metrics(meta, data, conn)
-js = vm.data_metrics_append(js, data, filename)
-
-# <codecell>
-
 import time
+
+filestoredo = []
+
 for filename in biglist:
     try:
         data, meta = myS3.getData(bucket, filename, labeled=True)
         minmax = validate.findMinMax(data)
         
         old_oors = validate.oldFindOutOfRange(minmax)
+        old_deads = validate.oldFindDeadSensor(minmax, isClipTask(filename))
         js = vm.summary_metrics(meta, data, conn)
         js = vm.data_metrics_append(js, data, filename)
         new_oors = js['OutOfRange']
+        new_deads = js['DeadSensors']
         ignore = js['IgnoreErrors']
         
-        if not lists_contain_same(old_oors, new_oors):
-            print filename,old_oors, new_oors, ignore
+        _oors = []
+        _deads = []
+        for oor in new_oors:
+            if oor not in old_oors and 'OutOfRange' not in ignore.get(oor, []):
+                _oors.append(oor)
+                if filename not in filestoredo: filestoredo.append(filename)
+        for dead in new_deads:
+            if dead not in old_deads and 'DeadSensors' not in ignore.get(dead, []):
+                _deads.append(dead)
+                if filename not in filestoredo: filestoredo.append(filename)
+                    
+        if js['TaskType'] == 1: filestoredo.append(filename)
+            
+        if _oors or _deads: print filename, _oors, _deads
         time.sleep(0.1)
     except Exception as e:
         print e, filename
+        
+print filestoredo
 
-# <rawcell>
+# <codecell>
 
-# Completely ignore ThG dead for filters more complex than max-min? edge10/2013/01/10.13.45.59.369.1.txt
-# How to address suturing task where put down right tool to cut and they just really suck at it?
-#     Perhaps ignore last 60sec of suturing task?
-# 
-# 
-# edge10/2013/01/10.13.45.59.369.1.txt ['ThG_L']
-# edge10/2013/01/10.15.22.12.389.2.txt ['J1_R', 'J2_R', 'Lin_R', 'Rot_R', 'X_R', 'Y_R', 'Z_R']
-# edge10/2013/01/10.16.15.28.386.1.txt ['Fg_L']
-# edge10/2013/01/10.16.33.59.386.3.txt ['Fg_L', 'Fg_R']
-# edge10/2013/01/14.17.37.01.356.1.txt ['Fg_L']
-# edge10/2013/01/17.12.36.57.286.0.txt ['Fg_L']
-# edge10/2013/01/22.18.16.44.209.1.txt ['Fg_L']
-# edge10/2013/01/22.18.38.26.209.2.txt ['Fg_L']
-# edge10/2013/01/24.17.05.48.389.2.txt ['J1_R', 'J2_R', 'Lin_R', 'Rot_R', 'X_R', 'Y_R', 'Z_R']
-# edge2/2013/01/09.17.29.40.382.2.txt ['J1_R', 'J2_R', 'Lin_R', 'Rot_R', 'X_R', 'Y_R', 'Z_R']
-# edge6/2013/01/16.22.17.15.346.1.txt ['Fg_L']
-# edge6/2013/01/17.18.47.05.313.1.txt ['Fg_L']
-# edge6/2013/01/18.20.43.17.340.3.txt ['Fg_L']
-# edge6/2013/01/18.21.25.44.307.1.txt ['Fg_L']
-# edge6/2013/01/25.21.43.21.393.0.txt ['Rot_L']
-# edge6/2013/01/31.00.30.19.392.1.txt ['Fg_L']
-# edge6/2013/01/31.00.57.07.392.1.txt ['Fg_L']
-# edge7/2013/01/07.16.11.12.370.0.txt ['Fg_R']
-# edge7/2013/01/07.16.39.49.370.3.txt ['Fg_L']
-# 'NoneType' object has no attribute 'dtype'
-# error in edge7/2013/01/07.16.59.48.370.2.txt
-# 
-# WITH 1 AS THRESH FOR FG:
-# 1 false positive, 2 would be ignored (pretty good for 1 month!)
-# 3 need to be fixed
-# edge10/2013/01/10.13.45.59.369.1.txt ['ThG_L']
-# edge10/2013/01/10.15.22.12.389.2.txt ['J1_R', 'J2_R', 'Lin_R', 'Rot_R', 'X_R', 'Y_R', 'Z_R']
-# edge10/2013/01/10.16.33.59.386.3.txt ['Fg_L']
-# edge10/2013/01/14.17.37.01.356.1.txt ['Fg_L']
-# edge10/2013/01/24.17.05.48.389.2.txt ['J1_R', 'J2_R', 'Lin_R', 'Rot_R', 'X_R', 'Y_R', 'Z_R']
-# edge2/2013/01/09.17.29.40.382.2.txt ['J1_R', 'J2_R', 'Lin_R', 'Rot_R', 'X_R', 'Y_R', 'Z_R']
-# edge6/2013/01/25.21.43.21.393.0.txt ['Rot_L'] (real)
+len(filestoredo)
+
+# <codecell>
+
+import fetch.mySQS as mySQS
+
+# <codecell>
+
+from aws import aws_ak, aws_sk
+from boto.sqs.message import Message
+'''Define Connections'''
+sqs_conn = boto.connect_sqs(aws_ak, aws_sk)
+q = sqs_conn.get_queue('Files2Ship')
+comq = sqs_conn.get_queue('EdgeFiles2Process')
+#Connect to ses
+ses_conn = boto.connect_ses(aws_ak, aws_sk)
+#Connect to SimpleDB
+sdb_conn = boto.connect_sdb(aws_ak, aws_sk)
+sdb_domain = sdb_conn.get_domain('ProcessedEdgeFiles')
+
+mySQS.append_list_to_queue(filestoredo, comq)
+
+# <codecell>
+
 

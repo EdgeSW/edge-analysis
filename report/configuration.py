@@ -17,8 +17,8 @@ interchangable = {
                 ,'Fg_R': {'min': -0.6, 'max': 150. }
                   }
 needle_driver = {
-                'ThG_L': {'min': -40., 'max': 40. }
-                ,'ThG_R': {'min': -40., 'max': 40. }
+                'ThG_L': {'min': -40., 'max': 50. }
+                ,'ThG_R': {'min': -40., 'max': 50. }
                 ,'Fg_L': {'min': -0.6, 'max': 150. }
                 ,'Fg_R': {'min': -0.6, 'max': 150. }
                   }

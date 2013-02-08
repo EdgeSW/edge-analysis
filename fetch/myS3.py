@@ -1,10 +1,10 @@
 import json, cStringIO
 from datetime import datetime, timedelta
-from report.configuration import formats
-from report.configuration import converterdict
+from Simscore.report.configuration import formats
+from Simscore.report.configuration import converterdict
 import numpy as np
 import boto
-from aws import aws_ak, aws_sk
+from fetch.aws import aws_ak, aws_sk
 
 edges = ['edge0/', 'edge1/', 'edge10/', 'edge11/', 'edge12/', 'edge2/', 'edge3/', 'edge4/', 'edge5/', 'edge6/', 'edge7/', 'edge8/', 'edge9/']
 #edges = ['edge10/', 'edge11/', 'edge12/', 'edge2/', 'edge3/', 'edge4/', 'edge5/', 'edge6/', 'edge7/', 'edge8/', 'edge9/']

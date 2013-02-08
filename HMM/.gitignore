@@ -1,0 +1,5 @@
+csv/
+LogIdxCSVs/
+*.pyc
+bigquery_web.dat
+timdata_csv_all

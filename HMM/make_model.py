@@ -17,7 +17,11 @@
 
 # <codecell>
 
-import sys
+nltk.__version__
+
+# <codecell>
+
+import sys, os
 sys.path.append('C:\\Users\\Tyler\\.ipython\\edge-analysis')
 from scipy.cluster import vq
 import numpy as np
@@ -72,8 +76,8 @@ if features is None:
 # <codecell>
 
 #cdbkL, cdbkR, a, b = vqr.download_codebook('10-OCT-2012 1:33')
-pp = '.ipython/HMM-Train/codebooks/'+'_'.join(['cdbk','timdata',dataset,task,hand,'v1']) ##LOCAL
-#pp = 'codebooks/'+'_'.join(['cdbk','timdata',dataset,task,hand,'v1']) ##UBUNTU
+#pp = '.ipython/edge-analysis/HMM/codebooks/'+'_'.join(['cdbk','timdata',dataset,task,hand,'v1']) ##LOCAL
+pp = 'codebooks/'+'_'.join(['cdbk','timdata',dataset,task,hand,'v1']) ##UBUNTU
 
 fh = open(pp,'r')
 codebook = np.array(json.loads(fh.read()))
@@ -119,8 +123,8 @@ a = plt.plot(range(250), [3]*250)
 ### Normalize
 
 #retrieve thresholds 
-pp = '.ipython/HMM-Train/thresholds/'+'_'.join(['thresholds','timdata',task,hand]) ##LOCAL
-#pp = 'thresholds/'+'_'.join(['thresholds','timdata',task,hand]) ##UBUNTU
+#pp = '.ipython/edge-analysis/HMM/thresholds/'+'_'.join(['thresholds','timdata',task,hand]) ##LOCAL
+pp = 'thresholds/'+'_'.join(['thresholds','timdata',task,hand]) ##UBUNTU
 
 fh = open(pp,'r')
 thresholds = json.loads(fh.read())
@@ -160,8 +164,23 @@ encoded_segments = scrub.encodeSegments(feat_seg_norm, codebook)
 
 # <codecell>
 
+print len(encoded_segments)
+
+# <codecell>
+
+import csv
+with open('pegtx_right.csv', 'wb') as csvfile:
+    spamwriter = csv.writer(csvfile, delimiter=',')
+    for i in range(len(encoded_segments)):
+        spamwriter.writerow(encoded_segments[i])
+
+# <codecell>
+
 #Take a visual peek at the distribution of codewords
 a,b,c = hist(np.concatenate(tuple([seg for seg in encoded_segments])), size)
+
+# <codecell>
+
 
 # <headingcell level=2>
 
@@ -196,18 +215,29 @@ print ipclient
 
 # <codecell>
 
-rrr='''s = """"Your humble writer knows a little bit about a lot of things, but despite writing a fair amount about text processing (a book, for example), linguistic processing is a relatively novel area for me. Forgive me if I stumble through my explanations of the quite remarkable Natural Language Toolkit (NLTK), a wonderful tool for teaching, and working in, computational linguistics using Python. Computational linguistics, moreover, is closely related to the fields of artificial intelligence, language/speech recognition, translation, and grammar checking.\nWhat NLTK includes\nIt is natural to think of NLTK as a stacked series of layers that build on each other. Readers familiar with lexing and parsing of artificial languages (like, say, Python) will not have too much of a leap to understand the similar -- but deeper -- layers involved in natural language modeling.\nGlossary of terms\nCorpora: Collections of related texts. For example, the works of Shakespeare might, collectively, by called a corpus; the works of several authors, corpora.\nHistogram: The statistic distribution of the frequency of different words, letters, or other items within a data set.\nSyntagmatic: The study of syntagma; namely, the statistical relations in the contiguous occurrence of letters, words, or phrases in corpora.\nContext-free grammar: Type-2 in Noam Chomsky's hierarchy of the four types of formal grammars. See Resources for a thorough description.\nWhile NLTK comes with a number of corpora that have been pre-processed (often manually) to various degrees, conceptually each layer relies on the processing in the adjacent lower layer. Tokenization comes first; then words are tagged; then groups of words are parsed into grammatical elements, like noun phrases or sentences (according to one of several techniques, each with advantages and drawbacks); and finally sentences or other grammatical units can be classified. Along the way, NLTK gives you the ability to generate statistics about occurrences of various elements, and draw graphs that represent either the processing itself, or statistical aggregates in results.\nIn this article, you'll see some relatively fleshed-out examples from the lower-level capabilities, but most of the higher-level capabilities will be simply described abstractly. Let's now take the first steps past text processing, narrowly construed. """
+s = """"Your humble writer knows a little bit about a lot of things, but despite writing a fair amount about text processing (a book, for example), linguistic processing is a relatively novel area for me. Forgive me if I stumble through my explanations of the quite remarkable Natural Language Toolkit (NLTK), a wonderful tool for teaching, and working in, computational linguistics using Python. Computational linguistics, moreover, is closely related to the fields of artificial intelligence, language/speech recognition, translation, and grammar checking.\nWhat NLTK includes\nIt is natural to think of NLTK as a stacked series of layers that build on each other. Readers familiar with lexing and parsing of artificial languages (like, say, Python) will not have too much of a leap to understand the similar -- but deeper -- layers involved in natural language modeling.\nGlossary of terms\nCorpora: Collections of related texts. For example, the works of Shakespeare might, collectively, by called a corpus; the works of several authors, corpora.\nHistogram: The statistic distribution of the frequency of different words, letters, or other items within a data set.\nSyntagmatic: The study of syntagma; namely, the statistical relations in the contiguous occurrence of letters, words, or phrases in corpora.\nContext-free grammar: Type-2 in Noam Chomsky's hierarchy of the four types of formal grammars. See Resources for a thorough description.\nWhile NLTK comes with a number of corpora that have been pre-processed (often manually) to various degrees, conceptually each layer relies on the processing in the adjacent lower layer. Tokenization comes first; then words are tagged; then groups of words are parsed into grammatical elements, like noun phrases or sentences (according to one of several techniques, each with advantages and drawbacks); and finally sentences or other grammatical units can be classified. Along the way, NLTK gives you the ability to generate statistics about occurrences of various elements, and draw graphs that represent either the processing itself, or statistical aggregates in results.\nIn this article, you'll see some relatively fleshed-out examples from the lower-level capabilities, but most of the higher-level capabilities will be simply described abstractly. Let's now take the first steps past text processing, narrowly construed. """
 sentences = s.split('.')[:-1]
 seq = [map(lambda x:(x,''), ss.split(' ')) for ss in sentences]
 symbols = list(set([ss[0] for sss in seq for ss in sss]))
 states = range(5)
 trainer = nltk.tag.hmm.HiddenMarkovModelTrainer(states=states,symbols=symbols)
-m = trainer.train_unsupervised(seq)'''
+m = trainer.train_unsupervised(seq)
+
+# <codecell>
+
+m._priors._data
 
 # <codecell>
 
 #Zip encoded segments into appropriate format
 encoded_segments = scrub.zipSegments(encoded_segments)
+
+# <codecell>
+
+import random
+random.shuffle(encoded_segments)
+#for ss in encoded_segments:
+    #print len(ss)
 
 # <codecell>
 
@@ -222,10 +252,35 @@ end = datetime.now()
 print end
 print end - start
 
+# <rawcell>
+
+# Training pegtransfer : 
+# 2013-02-08 22:14:19.791751
+# iteration 0 logprob -43169.2189948
+# iteration 1 logprob -33914.3322962
+# iteration 2 logprob -33914.3322962
+# 2013-02-08 22:19:25.323596
+# 0:05:05.531845
+# 
+# Training pegtransfer : 
+# 2013-02-08 22:23:07.678859
+# iteration 0 logprob -43169.2189948
+# iteration 1 logprob -33914.3322962
+# iteration 2 logprob -33914.3322962
+# 2013-02-08 22:28:11.641754
+# 0:05:03.962895
+# 
+# Training pegtransfer : 
+# 2013-02-08 22:30:14.584861
+# iteration 0 logprob -43169.2189948
+# iteration 1 logprob -33914.3322962
+# iteration 2 logprob -33914.3322962
+# 2013-02-08 22:35:20.786614
+# 0:05:06.201753
+
 # <codecell>
 
-trained_3_iterations = trained
-#4 minutes, logprob -37127
+trained._transitions[2]._data
 
 # <codecell>
 
